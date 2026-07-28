@@ -88,6 +88,22 @@ export const StandardPokerCardFace: React.FC<{ card: Card; isLarge?: boolean }> 
   const suitSymbol = card.suit === '黑桃' ? '♠' : card.suit === '紅心' ? '♥' : card.suit === '方塊' ? '♦' : '♣';
   const textColor = isRed ? 'text-red-600' : 'text-slate-900';
 
+  if (!isLarge) {
+    return (
+      <div className="w-full h-full bg-gradient-to-b from-white via-[#FFFDF9] to-[#F8F3ED] border-2 border-[#D2BCA6] rounded-xl flex flex-col items-center justify-center p-2 shadow-xs relative overflow-hidden select-none">
+        <span className={`text-3xl sm:text-4xl font-black font-sans ${textColor} leading-none drop-shadow-2xs`}>
+          {suitSymbol}
+        </span>
+        <span className={`text-lg sm:text-2xl font-black font-mono tracking-wider ${textColor} mt-1`}>
+          {card.rank}
+        </span>
+        <span className="text-[10px] sm:text-xs font-extrabold text-[#A87C66] mt-0.5 font-serif">
+          {card.suit}
+        </span>
+      </div>
+    );
+  }
+
   const renderPips = () => {
     const num = parseInt(card.rank, 10);
 
@@ -255,7 +271,7 @@ export default function App() {
 
   // Luck Tuning / Fortune Transformation State
   const [showLuckModal, setShowLuckModal] = useState(false);
-  const [selectedLuckPrice, setSelectedLuckPrice] = useState<100 | 200 | 500>(200);
+  const [selectedLuckPrices, setSelectedLuckPrices] = useState<number[]>([200]);
   const [isProcessingLuck, setIsProcessingLuck] = useState(false);
   const [luckModalStep, setLuckModalStep] = useState<'select' | 'served'>('select');
   const [unlockedLuckBlessing, setUnlockedLuckBlessing] = useState<{
@@ -267,35 +283,53 @@ export default function App() {
     unlockedAt: string;
   } | null>(null);
 
-  const handleExecuteLuckPayment = (price: 100 | 200 | 500) => {
+  const toggleLuckPriceOption = (price: number) => {
+    setSelectedLuckPrices(prev =>
+      prev.includes(price)
+        ? prev.filter(p => p !== price)
+        : [...prev, price].sort((a, b) => a - b)
+    );
+  };
+
+  const handleExecuteLuckPayment = () => {
+    if (selectedLuckPrices.length === 0) return;
     setIsProcessingLuck(true);
     setTimeout(() => {
       setIsProcessingLuck(false);
       setLuckModalStep('served');
       const nowStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-      let packageName = '☕ 經典晨曦拿鐵特調';
-      let packageDesc = '以低溫烘焙濃縮與濃純鮮乳為基礎，撫平平時思緒雜訊，奠定安定踏實的能量基底。';
-      let blessingMantra = '純粹拿鐵香氣撫平急躁思緒與盲區迷惘，安定當前磁場，奠定穩定踏實吉運。';
-      let energyBoost = 15;
 
-      if (price === 200) {
-        packageName = '🍯 絲絨太妃拿鐵 ‧ 手作提拉米蘇甜點套餐';
-        packageDesc = '在 $100 經典拿鐵的定心基底上，揉合焦香太妃糖特調與綿密義式提拉米蘇，甜美層次喚醒貴人緣分與好感好運，補充突破現實的充沛自信。';
-        blessingMantra = '焦香太妃糖與提拉米蘇交織，吸引強大貴人際遇與環境善意，為知行落差補充顯著的行動推力，雙倍轉運！';
-        energyBoost = 25;
-      } else if (price === 500) {
-        packageName = '🍷 極致冷萃 ‧ 法式紅酒漢堡排奢華饗宴';
-        packageDesc = '超越前兩款飲品與甜點的基礎，以長時間低萃慢釀的定心冷萃，搭配主廚特製醇厚紅酒燉漢堡排；扎實優質餐點帶來深層扎根力量，實現時空幾何的極致逆轉！';
-        blessingMantra = '冷萃極致定心與紅酒燉漢堡排的扎實餐點能量，化解深層卡關阻礙，賦予突破困局的大逆轉加持！';
-        energyBoost = 38;
+      const totalPrice = selectedLuckPrices.reduce((sum, p) => sum + p, 0);
+      const names: string[] = [];
+      const descs: string[] = [];
+      const mantras: string[] = [];
+      let totalBoost = 0;
+
+      if (selectedLuckPrices.includes(100)) {
+        names.push('☕ 經典晨曦拿鐵特調');
+        descs.push('經典晨曦拿鐵：撫平思緒雜訊，奠定安定踏實能量。');
+        mantras.push('純粹拿鐵香氣撫平急躁思緒，安定當前磁場。');
+        totalBoost += 15;
+      }
+      if (selectedLuckPrices.includes(200)) {
+        names.push('🍯 絲絨太妃拿鐵 ‧ 提拉米蘇');
+        descs.push('絲絨太妃拿鐵與提拉米蘇：喚醒貴人緣分，補充行動自信力。');
+        mantras.push('焦香太妃糖與提拉米蘇交織，吸引貴人際遇與環境善意。');
+        totalBoost += 25;
+      }
+      if (selectedLuckPrices.includes(500)) {
+        names.push('🍷 極致冷萃 ‧ 法式紅酒漢堡排');
+        descs.push('極致冷萃與紅酒漢堡排：帶來深層扎根力量，實現時空極致逆轉。');
+        mantras.push('冷萃極致定心與紅酒燉漢堡排扎實能量，化解卡關阻礙！');
+        totalBoost += 38;
       }
 
       setUnlockedLuckBlessing({
-        price,
-        name: packageName,
-        description: packageDesc,
-        blessingMantra,
-        energyBoost,
+        price: totalPrice,
+        name: names.join(' ✦ '),
+        description: descs.join(' '),
+        blessingMantra: mantras.join(' '),
+        energyBoost: totalBoost,
         unlockedAt: nowStr
       });
     }, 1800);
@@ -1502,14 +1536,6 @@ export default function App() {
                       <Coffee className="w-4 h-4 text-[#E4D5C7]" />
                       <span>3. 翔子的悄悄話</span>
                     </button>
-
-                    <button
-                      onClick={() => setShowShareModal(true)}
-                      className="px-4 py-2 rounded-lg text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white hover:brightness-110 shadow-md active:scale-95 cursor-pointer"
-                    >
-                      <Share2 className="w-4 h-4 text-amber-100" />
-                      <span>✨ 分享我的運勢</span>
-                    </button>
                   </div>
 
                   {/* Mobile Quick Jump Navigation Pills */}
@@ -1521,12 +1547,6 @@ export default function App() {
                         className="px-2 py-0.5 bg-white border border-[#D2BCA6] rounded-full text-[#4A3E3D] hover:bg-[#F5EBE6] whitespace-nowrap shadow-2xs"
                       >
                         🃏 9宮牌陣
-                      </button>
-                      <button
-                        onClick={() => document.getElementById('quick-answer-card')?.scrollIntoView({ behavior: 'smooth' })}
-                        className="px-2 py-0.5 bg-[#A87C66] text-white rounded-full hover:bg-[#966b56] whitespace-nowrap shadow-2xs"
-                      >
-                        🎯 結論解答
                       </button>
                       <button
                         onClick={() => document.getElementById('structure-breakdown-card')?.scrollIntoView({ behavior: 'smooth' })}
@@ -1737,268 +1757,6 @@ export default function App() {
                         )}
                       </AnimatePresence>
                     </div>
-
-                    {/* 2. DIRECT ANSWER & CORE VERDICT CARD */}
-                    {(() => {
-                      const quickAnswer = getQuickAnswerData(matrixCards, userQuestion, readingMode);
-                      if (!quickAnswer) return null;
-                      return (
-                        <div id="quick-answer-card" className="max-w-4xl mx-auto bg-gradient-to-b from-white to-[#F5EBE6]/80 border-2 border-[#A87C66]/50 rounded-2xl p-5 sm:p-8 shadow-md relative overflow-hidden space-y-5 sm:space-y-6 text-left">
-                          {/* Badge Top Right */}
-                          <div className="absolute top-0 right-0 bg-[#A87C66] text-[#F5EBE6] text-[11px] font-bold px-4 py-1.5 rounded-bl-xl tracking-wider shadow-xs flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>時空九宮格結論解答</span>
-                          </div>
-
-                          {/* Main Verdict Tag & Headline */}
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className={`px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full border ${quickAnswer.verdictBadgeStyle.bg} ${quickAnswer.verdictBadgeStyle.text} ${quickAnswer.verdictBadgeStyle.border} shadow-2xs flex items-center gap-1`}>
-                                {quickAnswer.verdictTag}
-                              </span>
-                              {quickAnswer.feasibilityScore && quickAnswer.feasibilityScore !== quickAnswer.verdictTag && (
-                                <span className="text-xs bg-[#E4D5C7] text-[#4A3E3D] px-3 py-1 rounded-full font-bold">
-                                  {quickAnswer.feasibilityScore}
-                                </span>
-                              )}
-                            </div>
-
-                            <h3 className="text-xl sm:text-2xl font-extrabold text-[#4A3E3D] font-serif leading-snug pt-1">
-                              {quickAnswer.headlineVerdict}
-                            </h3>
-                          </div>
-
-                          {/* Direct Answer Box - High Contrast & Unambiguous */}
-                          <div className="bg-amber-50/90 border-2 border-amber-200 rounded-xl p-4 sm:p-5 text-sm sm:text-base text-[#4A3E3D] leading-relaxed shadow-2xs font-serif space-y-2 sm:space-y-3">
-                            <div className="font-extrabold text-amber-900 text-xs sm:text-sm flex items-center gap-1.5 font-sans tracking-wide">
-                              <CheckCircle2 className="w-4 h-4 text-amber-700 flex-shrink-0" />
-                              <span>直擊解答（最終結論與時空流向）：</span>
-                            </div>
-                            <p className="text-[#3a2d2c] font-bold text-sm sm:text-base leading-relaxed pl-1 whitespace-pre-line">
-                              {quickAnswer.directAnswerSummary}
-                            </p>
-                          </div>
-
-                          {/* One-liner Takeaway */}
-                          <div className="bg-[#4A3E3D] text-[#F5EBE6] p-3.5 sm:p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-sm">
-                            <Compass className="w-5 h-5 text-[#E4D5C7] flex-shrink-0" />
-                            <span>{quickAnswer.keyTakeaway}</span>
-                          </div>
-
-                          {/* Share Fortune Card Action Bar */}
-                          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#E4D5C7]">
-                            <div className="text-xs text-[#7A6A63] font-serif">
-                              ☕ 想與好友分享這次的解讀結果與大吉籤嗎？
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setShowShareModal(true)}
-                              className="px-5 py-2.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
-                            >
-                              <Share2 className="w-4 h-4 text-amber-100" />
-                              <span>✨ 生成並分享我的運勢圖卡</span>
-                            </button>
-                          </div>
-
-                          {/* Mobile Collapse Toggle Bar */}
-                          <button
-                            type="button"
-                            onClick={() => setMobileAnswerExpanded(!mobileAnswerExpanded)}
-                            className="sm:hidden w-full py-2.5 px-3 bg-[#E4D5C7]/60 border border-[#D2BCA6] rounded-xl text-xs font-extrabold text-[#4A3E3D] flex items-center justify-between hover:bg-[#E4D5C7] transition-all shadow-2xs"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <Sliders className="w-3.5 h-3.5 text-[#A87C66]" />
-                              {mobileAnswerExpanded ? '收合選項評比與細節剖析' : '📱 展開完整選項評比與行動拆解 (點擊展開)'}
-                            </span>
-                            <ChevronDown className={`w-4 h-4 text-[#A87C66] transition-transform duration-300 ${mobileAnswerExpanded ? 'rotate-180' : ''}`} />
-                          </button>
-
-                          {/* Collapsible Details (Always visible on desktop, toggleable on mobile) */}
-                          <div className={`${mobileAnswerExpanded ? 'block' : 'hidden'} sm:block space-y-5 sm:space-y-6`}>
-                            {/* Choice Decision Mode Options Ranking Cards */}
-                            {quickAnswer.optionsEvaluated && quickAnswer.optionsEvaluated.length > 0 && (
-                              <div className="bg-[#E4D5C7]/20 border border-[#E4D5C7] rounded-xl p-4 sm:p-5 space-y-3">
-                                <div className="flex flex-wrap items-center justify-between gap-1">
-                                  <h4 className="font-bold text-xs sm:text-sm text-[#4A3E3D] flex items-center gap-1.5 font-sans">
-                                    <CheckSquare className="w-4 h-4 text-[#A87C66]" />
-                                    <span>多選項勝出評比 (基於九宮格牌陣契合度)：</span>
-                                  </h4>
-                                  <span className="text-[10px] text-[#A87C66] bg-[#E4D5C7] px-2 py-0.5 rounded font-bold">
-                                    契合度排名
-                                  </span>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                  {quickAnswer.optionsEvaluated.map((optEval) => (
-                                    <div
-                                      key={optEval.optionName}
-                                      className={`p-3.5 rounded-xl border flex flex-col justify-between transition-all ${
-                                        optEval.rank === 1
-                                          ? 'bg-gradient-to-b from-amber-50 to-emerald-50/80 border-emerald-500/80 shadow-xs ring-1 ring-emerald-300'
-                                          : 'bg-white/80 border-[#E4D5C7]'
-                                      }`}
-                                    >
-                                      <div>
-                                        <div className="flex justify-between items-center mb-1.5">
-                                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                                            optEval.rank === 1 
-                                              ? 'bg-emerald-700 text-white shadow-2xs' 
-                                              : 'bg-[#E4D5C7] text-[#4A3E3D]'
-                                          }`}>
-                                            {optEval.recommendationTag}
-                                          </span>
-                                          <span className="text-xs font-mono font-extrabold text-[#A87C66]">
-                                            {optEval.score}% 契合
-                                          </span>
-                                        </div>
-
-                                        <div className="text-base font-extrabold text-[#4A3E3D] font-serif my-1">
-                                          『{optEval.optionName}』
-                                        </div>
-
-                                        {optEval.matchedPosName && optEval.matchedCardName && (
-                                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 my-1.5 rounded-md text-[10px] font-bold bg-[#A87C66]/10 text-[#7A513E] border border-[#A87C66]/25">
-                                            <Sparkles className="w-3 h-3 text-[#A87C66]" />
-                                            <span>契合 {optEval.matchedPosName}：{optEval.matchedCardName}</span>
-                                          </div>
-                                        )}
-
-                                        <p className="text-[11px] text-[#7A6A63] leading-relaxed font-serif mt-1">
-                                          {optEval.reasoning}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* 2 Pillars Breakdown */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
-                              <div className="bg-white border border-[#E4D5C7] rounded-xl p-4 space-y-1.5 shadow-2xs">
-                                <div className="font-bold text-[#A87C66] text-xs flex items-center gap-1 font-sans">
-                                  <span>🔍 結果形成的原因與時空背景</span>
-                                </div>
-                                <p className="text-[#4A3E3D] leading-relaxed text-xs font-serif">
-                                  {quickAnswer.resultReasoning}
-                                </p>
-                              </div>
-
-                              <div className="bg-white border border-[#E4D5C7] rounded-xl p-4 space-y-1.5 shadow-2xs">
-                                <div className="font-bold text-[#A87C66] text-xs flex items-center gap-1 font-sans">
-                                  <span>⚡ 確保或優化結果的立即行動</span>
-                                </div>
-                                <p className="text-[#4A3E3D] leading-relaxed text-xs font-serif">
-                                  {quickAnswer.actionGuidance}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* LUCK TRANSFORMATION / FORTUNE TUNING CARD IN RESULT PAGE */}
-                            {unlockedLuckBlessing ? (
-                              <div className="bg-gradient-to-r from-amber-950 via-[#4A3E3D] to-amber-900 text-white rounded-2xl p-5 sm:p-6 shadow-md border-2 border-amber-400/50 space-y-4 text-left relative overflow-hidden">
-                                <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10">
-                                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-amber-300 overflow-hidden shadow-md flex-shrink-0 bg-[#2D1B18]">
-                                    <img
-                                      src={shokoSmilingImg}
-                                      alt="翔子端餐"
-                                      className="w-full h-full object-cover object-[center_15%] scale-135 origin-top"
-                                    />
-                                  </div>
-
-                                  <div className="space-y-1 text-center sm:text-left flex-1">
-                                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                                      <h4 className="font-extrabold text-base text-amber-100 font-serif">
-                                        ☕️ 翔子為您端上的【{unlockedLuckBlessing.name}】
-                                      </h4>
-                                      <span className="px-2.5 py-0.5 bg-red-700 text-white rounded-full text-xs font-bold border border-red-300 shadow-2xs">
-                                        【大吉】籤加持
-                                      </span>
-                                    </div>
-                                    <p className="text-xs text-amber-200/90 font-serif">
-                                      {unlockedLuckBlessing.description}
-                                    </p>
-                                  </div>
-
-                                  <span className="px-3 py-1 bg-emerald-600 text-white rounded-full text-xs font-bold font-mono shadow-xs whitespace-nowrap">
-                                    ⚡ 能量 +{unlockedLuckBlessing.energyBoost}%
-                                  </span>
-                                </div>
-
-                                {/* Omikuji Fortune Slip (大吉紙籤) */}
-                                <div className="bg-amber-50 text-[#4A3E3D] rounded-xl p-4 border-2 border-red-700/60 shadow-inner flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                  <div className="space-y-1 flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="px-2 py-0.5 bg-red-700 text-white text-[10px] font-extrabold rounded">
-                                        大吉紙籤
-                                      </span>
-                                      <strong className="text-xs font-bold text-amber-950 font-serif">
-                                        專屬改運祝禱指引：
-                                      </strong>
-                                    </div>
-                                    <p className="text-xs text-[#4A3E3D] font-serif leading-relaxed">
-                                      {unlockedLuckBlessing.blessingMantra}
-                                    </p>
-                                  </div>
-
-                                  <div className="border-2 border-red-700 text-red-700 rounded-lg px-3 py-1 text-center font-serif font-black bg-red-50 flex-shrink-0 self-center">
-                                    <span className="text-lg block leading-none">大吉</span>
-                                    <span className="text-[8px] block font-bold mt-0.5">御神籤</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="bg-gradient-to-r from-[#F5EBE6] via-amber-50 to-[#E4D5C7]/40 border-2 border-[#A87C66]/50 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-left">
-                                <div className="flex items-start gap-3">
-                                  <div className="w-10 h-10 rounded-full bg-[#4A3E3D] text-[#F5EBE6] flex items-center justify-center flex-shrink-0 shadow-xs mt-0.5">
-                                    <Coffee className="w-5 h-5 text-amber-200" />
-                                  </div>
-                                  <div>
-                                    <h4 className="font-extrabold text-sm text-[#4A3E3D] flex items-center gap-2 font-sans">
-                                      <span>🍀 感覺局勢凝重？選擇拿鐵套餐進行「改運」加持</span>
-                                    </h4>
-                                    <p className="text-xs text-[#7A6A63] font-serif mt-1 leading-relaxed">
-                                      可選擇 <strong className="text-[#A87C66]">$100 經典拿鐵</strong>、<strong className="text-[#A87C66]">$200 米蘭冬日沙龍・午茶時光</strong> 或 <strong className="text-[#A87C66]">$500 微醺波爾多・午後私廚</strong>，即刻轉化時空磁場與解鎖專屬祝禱！
-                                    </p>
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setLuckModalStep('select');
-                                    setShowLuckModal(true);
-                                  }}
-                                  className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-[#A87C66] to-[#8C5C42] text-white rounded-xl text-xs font-extrabold hover:brightness-110 transition-all flex items-center justify-center gap-1.5 shadow-md whitespace-nowrap cursor-pointer"
-                                >
-                                  <Sparkles className="w-4 h-4 text-amber-200" />
-                                  <span>✨ 進行套餐改運 ($100 / $200 / $500)</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Reset & Fine-tune options */}
-                          <div className="flex flex-wrap justify-center gap-3 pt-2 border-t border-dashed border-[#E4D5C7]">
-                            <button
-                              onClick={triggerZenDeal}
-                              className="px-4 py-1.5 bg-[#E4D5C7]/60 text-[#4A3E3D] border border-[#D2BCA6] rounded-lg text-xs font-semibold hover:bg-[#E4D5C7] transition-colors flex items-center space-x-1.5"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5" />
-                              <span>重新洗牌發牌</span>
-                            </button>
-
-                            <button
-                              onClick={() => openManualModal()}
-                              className="px-4 py-1.5 bg-[#A87C66] text-[#F5EBE6] rounded-lg text-xs font-semibold hover:bg-[#966b56] transition-colors flex items-center space-x-1.5"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              <span>手動指定/微調牌陣</span>
-                            </button>
-                          </div>
-
-                        </div>
-                      );
-                    })()}
 
                     {/* 3. THREE MAIN AXES & CORE COLUMN STRUCTURE */}
                     {(() => {
@@ -2396,17 +2154,17 @@ export default function App() {
                     className="max-w-4xl mx-auto space-y-6"
                   >
                     {/* Back to Result button */}
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between gap-2 overflow-x-auto whitespace-nowrap pb-1">
                       <button
                         onClick={() => setReadingSubTab('result')}
-                        className="px-4 py-2 bg-[#E4D5C7]/70 text-[#4A3E3D] rounded-lg text-xs font-bold hover:bg-[#E4D5C7] transition-all flex items-center gap-1.5 cursor-pointer"
+                        className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-[#E4D5C7]/70 text-[#4A3E3D] rounded-lg text-[11px] sm:text-xs font-bold hover:bg-[#E4D5C7] transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
                       >
-                        <RotateCcw className="w-4 h-4" />
+                        <RotateCcw className="w-3.5 h-3.5" />
                         <span>返回九宮格結果</span>
                       </button>
 
-                      <span className="text-xs font-bold text-[#A87C66] bg-amber-100/80 text-amber-900 border border-amber-200 px-3 py-1 rounded-full font-mono">
-                        ☕️ 翔子的悄悄話專屬空間
+                      <span className="text-[11px] sm:text-xs font-bold text-[#A87C66] bg-amber-100/80 text-amber-900 border border-amber-200 px-2.5 py-1 rounded-full font-mono whitespace-nowrap shrink-0">
+                        ☕️ 打烊前的最後加點
                       </span>
                     </div>
 
@@ -2422,10 +2180,10 @@ export default function App() {
 
                       <div className="space-y-2 flex-1">
                         <h2 className="text-2xl sm:text-3xl font-extrabold text-amber-100 font-serif">
-                          翔子的悄悄話 ☕️
+                          翔子的悄悄話
                         </h2>
                         <p className="text-xs sm:text-sm text-[#E4D5C7] font-serif leading-relaxed">
-                          在這間沒有外人干擾的小小茶座裡，翔子將細心為您對照九宮格的意識、現實與行為落差，陪伴您找回當下的安定感，踏出未來的具體第一步。
+                          在這間略嫌壅擠的雙人座裡，翔子將細心為您對照九宮格的意識、現實與行為落差，陪伴您找回當下的安定感，踏出未來的具體第一步。
                         </p>
                       </div>
                     </div>
@@ -2855,11 +2613,12 @@ export default function App() {
                   return (
                     <div
                       key={pos.id}
+                      onClick={() => setActiveManualHoverSlot(index)}
                       onMouseEnter={() => setActiveManualHoverSlot(index)}
                       onMouseLeave={() => setActiveManualHoverSlot(null)}
-                      className={`bg-white border-2 rounded-2xl p-3.5 shadow-xs transition-all flex flex-col justify-between relative group ${
+                      className={`bg-white border-2 rounded-2xl p-3.5 shadow-xs transition-all flex flex-col justify-between relative group cursor-pointer ${
                         activeManualHoverSlot === index
-                          ? 'border-[#A87C66] ring-2 ring-[#A87C66]/20 bg-amber-50/20'
+                          ? 'border-[#A87C66] ring-2 ring-[#A87C66]/30 bg-amber-50/30'
                           : 'border-[#D2BCA6] hover:border-[#A87C66]'
                       }`}
                     >
@@ -2886,7 +2645,7 @@ export default function App() {
                       </div>
 
                       {/* Playing Card Visual Preview Canvas */}
-                      <div className="my-2 p-2 bg-gradient-to-b from-[#FAF4F0] to-[#E4D5C7]/30 rounded-xl border border-[#D2BCA6]/50 flex items-center justify-center min-h-[95px] relative">
+                      <div className="my-2 p-2 bg-gradient-to-b from-[#FAF4F0] to-[#E4D5C7]/30 rounded-xl border border-[#D2BCA6]/50 flex items-center justify-center min-h-[90px] relative">
                         {currentCard && suitInfo ? (
                           <div className="w-full bg-white rounded-lg border border-[#D2BCA6] p-2 shadow-2xs flex items-center justify-between">
                             <div className="text-left">
@@ -2917,17 +2676,17 @@ export default function App() {
                         ) : (
                           <div className="text-center py-2 text-gray-400">
                             <Coffee className="w-6 h-6 mx-auto mb-1 stroke-1 text-amber-700/40" />
-                            <span className="text-[10px] font-bold">點擊下方按鈕選擇花色與點數</span>
+                            <span className="text-[10px] font-bold">點擊選擇花色與點數</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Quick Interactive Suit Pills */}
+                      {/* Quick Interactive Suit Pills (Optimized for Touch) */}
                       <div className="space-y-1.5 my-1">
                         <div className="text-[10px] font-extrabold text-[#A87C66] font-serif flex justify-between items-center">
                           <span>選擇花色 (四元素)：</span>
                         </div>
-                        <div className="grid grid-cols-4 gap-1">
+                        <div className="grid grid-cols-4 gap-1.5">
                           {(['黑桃', '紅心', '方塊', '梅花'] as Card['suit'][]).map((s) => {
                             const isSelected = currentCard?.suit === s;
                             const sInfo = SUIT_TAROT_MAP[s];
@@ -2935,31 +2694,35 @@ export default function App() {
                               <button
                                 key={s}
                                 type="button"
-                                onClick={() => updateManualSlotCard(index, s, currentCard?.rank || 'A')}
-                                className={`py-1 px-1 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-0.5 cursor-pointer border ${
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateManualSlotCard(index, s, currentCard?.rank || 'A');
+                                }}
+                                className={`py-2 sm:py-1 px-1 rounded-xl text-xs sm:text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer border active:scale-95 ${
                                   isSelected
-                                    ? s === '紅心' ? 'bg-rose-100 text-rose-700 border-rose-400 shadow-2xs ring-1 ring-rose-400/40 scale-102' :
-                                      s === '方塊' ? 'bg-amber-100 text-amber-800 border-amber-400 shadow-2xs ring-1 ring-amber-400/40 scale-102' :
-                                      s === '梅花' ? 'bg-emerald-100 text-emerald-800 border-emerald-400 shadow-2xs ring-1 ring-emerald-400/40 scale-102' :
-                                      'bg-slate-200 text-slate-800 border-slate-400 shadow-2xs ring-1 ring-slate-400/40 scale-102'
+                                    ? s === '紅心' ? 'bg-rose-100 text-rose-700 border-rose-400 shadow-2xs ring-1 ring-rose-400/40' :
+                                      s === '方塊' ? 'bg-amber-100 text-amber-800 border-amber-400 shadow-2xs ring-1 ring-amber-400/40' :
+                                      s === '梅花' ? 'bg-emerald-100 text-emerald-800 border-emerald-400 shadow-2xs ring-1 ring-emerald-400/40' :
+                                      'bg-slate-200 text-slate-800 border-slate-400 shadow-2xs ring-1 ring-slate-400/40'
                                     : 'bg-white text-gray-600 border-gray-200 hover:bg-amber-50'
                                 }`}
                               >
-                                <span>{sInfo.icon}</span>
-                                <span className="text-[10px] hidden sm:inline">{s[0]}</span>
+                                <span className="text-sm sm:text-xs">{sInfo.icon}</span>
+                                <span className="text-[10px] font-bold">{s[0]}</span>
                               </button>
                             );
                           })}
                         </div>
                       </div>
 
-                      {/* Rank Dropdown Selector */}
+                      {/* Rank Dropdown Selector (Optimized for Mobile Tapping) */}
                       <div className="mt-2">
                         <label className="block text-[10px] font-extrabold text-[#A87C66] mb-1 font-serif">選擇卡牌點數 (A~K)：</label>
                         <select
                           value={currentCard?.rank || 'A'}
                           onChange={(e) => updateManualSlotCard(index, currentCard?.suit || '黑桃', e.target.value as Card['rank'])}
-                          className="w-full bg-[#FAF4F0] border border-[#D2BCA6] rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#4A3E3D] focus:outline-none focus:ring-2 focus:ring-[#A87C66] cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full bg-[#FAF4F0] border-2 border-[#D2BCA6] rounded-xl px-3 py-2 text-xs sm:text-sm font-extrabold text-[#4A3E3D] focus:outline-none focus:ring-2 focus:ring-[#A87C66] cursor-pointer"
                         >
                           {ALL_RANKS.map(r => (
                             <option key={r} value={r}>
@@ -3013,270 +2776,379 @@ export default function App() {
       {/* LUCK TRANSFORMATION / FORTUNE TUNING MODAL */}
       <AnimatePresence>
         {showLuckModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/65 backdrop-blur-sm overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white border-2 border-[#A87C66] rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden text-left max-h-[90vh] overflow-y-auto"
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-[#FAF5EE] border-2 border-[#A87C66] rounded-3xl max-w-2xl w-full p-5 sm:p-8 shadow-2xl relative overflow-hidden text-left my-auto max-h-[92vh] flex flex-col justify-between"
             >
               {/* Header close button */}
               <button
+                type="button"
                 onClick={() => setShowLuckModal(false)}
-                className="absolute top-4 right-4 text-[#A87C66] hover:text-[#4A3E3D] p-1.5 rounded-full hover:bg-[#F5EBE6] transition-colors cursor-pointer"
+                className="absolute top-4 right-4 z-20 text-[#A87C66] hover:text-[#4A3E3D] p-2 rounded-full hover:bg-[#E4D5C7]/50 transition-colors cursor-pointer"
+                title="關閉"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
 
-              {/* Modal Title */}
-              <div className="flex items-center gap-3 mb-5 border-b border-[#E4D5C7] pb-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#A87C66] to-[#4A3E3D] text-white flex items-center justify-center shadow-md flex-shrink-0">
-                  <Coffee className="w-6 h-6 text-amber-200" />
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-extrabold text-[#4A3E3D] font-serif flex items-center gap-2">
-                    <span>☕ 拿鐵套餐 • 時空改運儀式</span>
-                    <span className="text-xs bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full font-sans font-bold">
-                      能量加持
-                    </span>
-                  </h3>
-                  <p className="text-xs text-[#7A6A63] font-sans mt-0.5">
-                    依據時空九宮格磁場，選擇對應拿鐵美食套餐，注入正向轉運能量。
-                  </p>
-                </div>
-              </div>
-              {isProcessingLuck ? (
-                <div className="py-12 text-center space-y-4">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    className="w-16 h-16 border-4 border-[#A87C66] border-t-amber-300 rounded-full mx-auto flex items-center justify-center text-[#A87C66]"
-                  >
-                    <Coffee className="w-8 h-8 text-[#A87C66]" />
-                  </motion.div>
-                  <div className="space-y-1">
-                    <h4 className="font-extrabold text-base text-[#4A3E3D] font-serif">
-                      正在由翔子為您沖煮與準備餐點中...
-                    </h4>
-                    <p className="text-xs text-[#A87C66] font-sans">
-                      提煉轉運氣場，準備大吉紙籤與餐點，請稍候片刻 ☕️
+              {/* Modal Header (Hidden when in 'served' state to satisfy: 「翔子端餐」上方的文案全部刪除) */}
+              {luckModalStep !== 'served' && (
+                <div className="flex items-center gap-3.5 mb-5 border-b border-[#E4D5C7] pb-4 pr-10 flex-shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#A87C66] to-[#4A3E3D] text-white flex items-center justify-center shadow-md flex-shrink-0">
+                    <Coffee className="w-6 h-6 text-amber-200" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-2xl font-extrabold text-[#4A3E3D] font-serif flex flex-wrap items-center gap-2">
+                      <span>☕ 拿鐵套餐 • 時空改運儀式</span>
+                      <span className="text-xs bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full font-sans font-bold shadow-2xs">
+                        能量加持
+                      </span>
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#7A6A63] font-sans mt-0.5 leading-snug">
+                      依據時空九宮格磁場，選擇對應拿鐵美食套餐，注入正向轉運能量。
                     </p>
                   </div>
                 </div>
-              ) : luckModalStep === 'served' && unlockedLuckBlessing ? (
-                <div className="py-2 space-y-5 text-center">
-                  {/* Shoko Serving Avatar & Message in Large Featured Frame */}
-                  <div className="relative flex flex-col items-center">
-                    <div className="absolute w-56 h-56 bg-amber-300/30 rounded-full blur-2xl pointer-events-none" />
-
-                    <div className="relative w-52 h-68 sm:w-60 sm:h-76 rounded-3xl p-2 bg-gradient-to-b from-[#F5EBE6] via-[#E4D5C7] to-[#8C5C42] shadow-2xl border-4 border-[#8C5C42]/80 overflow-hidden relative group">
-                      <div className="relative w-full h-full rounded-2xl overflow-hidden bg-[#2D1B18]">
-                        <img
-                          src={shokoServingMealImg}
-                          alt="翔子親自端餐"
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover object-top"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#3A2E2D]/85 via-transparent to-transparent opacity-70 pointer-events-none" />
-                        <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 bg-black/70 backdrop-blur-md text-amber-100 border border-amber-300/50 px-3 py-1 rounded-full text-[11px] font-bold font-serif flex items-center gap-1.5 shadow-md whitespace-nowrap">
-                          <Coffee className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-                          <span>咖啡師 • 翔子 (親自端餐✨)</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3.5 bg-amber-50 text-[#4A3E3D] px-4 py-3 rounded-2xl border-2 border-amber-300 shadow-xs text-xs sm:text-sm font-serif max-w-md mx-auto relative text-center">
-                      <span className="font-bold text-amber-900 block mb-1 text-sm">
-                        翔子：「久等囉！親手為您端上『{unlockedLuckBlessing.name}』」
-                      </span>
-                      <span className="text-[#5C4D4B] leading-relaxed block">
-                        請慢用這份{unlockedLuckBlessing.description}～ 還有，為您附上了這張時空轉運大吉紙籤喔 💓
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Omikuji Fortune Slip (大吉紙籤) */}
-                  <div className="bg-amber-50/90 border-2 border-red-700/60 rounded-2xl p-5 shadow-md relative overflow-hidden text-left max-w-md mx-auto space-y-3">
-                    {/* Header with Large Red "大吉" Stamp */}
-                    <div className="flex justify-between items-start border-b border-red-200 pb-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs bg-red-700 text-white font-extrabold px-2.5 py-0.5 rounded-md shadow-xs">
-                            御神籤
-                          </span>
-                          <span className="text-xs text-amber-900 font-bold font-serif">
-                            翔子特別祝禱 ‧ 時空轉運
-                          </span>
-                        </div>
-                        <h4 className="text-base font-extrabold text-[#4A3E3D] font-serif mt-1">
-                          {unlockedLuckBlessing.name}
-                        </h4>
-                      </div>
-
-                      {/* Red Stamp */}
-                      <div className="border-4 border-red-700 text-red-700 rounded-xl px-3 py-1 text-center font-serif font-black tracking-widest shadow-xs bg-red-50/80 transform rotate-[-3deg] flex-shrink-0">
-                        <span className="text-xl sm:text-2xl block leading-none">大吉</span>
-                        <span className="text-[9px] block font-bold mt-0.5">時空轉運</span>
-                      </div>
-                    </div>
-
-                    {/* Slip Details */}
-                    <div className="space-y-2 text-xs text-[#4A3E3D] font-serif leading-relaxed">
-                      <div className="bg-white/90 p-2.5 rounded-lg border border-amber-200">
-                        <strong className="text-amber-900 block mb-0.5 font-sans">🍱 餐點體驗：</strong>
-                        {unlockedLuckBlessing.description}
-                      </div>
-
-                      <div className="bg-white/90 p-2.5 rounded-lg border border-amber-200">
-                        <strong className="text-amber-900 block mb-0.5 font-sans">📜 轉運祝禱詞：</strong>
-                        {unlockedLuckBlessing.blessingMantra}
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs pt-1">
-                        <span className="text-emerald-700 font-bold font-mono">
-                          ⚡ 能量指數升級 +{unlockedLuckBlessing.energyBoost}%
-                        </span>
-                        <span className="text-amber-800 text-[11px] font-medium">
-                          加持時間：{unlockedLuckBlessing.unlockedAt}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Confirm Action Button */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowLuckModal(false)}
-                      className="w-full max-w-md py-3.5 bg-gradient-to-r from-amber-700 via-amber-800 to-[#4A3E3D] text-white rounded-xl text-sm font-extrabold hover:brightness-110 transition-all shadow-md mx-auto flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <span>收下翔子端的餐點與「大吉」紙籤 ❤️</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  {/* Package Cards Options */}
-                  <div className="grid grid-cols-1 gap-3.5">
-                    {/* Option 1: $100 */}
-                    <div
-                      onClick={() => setSelectedLuckPrice(100)}
-                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative ${
-                        selectedLuckPrice === 100
-                          ? 'bg-amber-50/80 border-[#A87C66] shadow-sm ring-1 ring-[#A87C66]'
-                          : 'bg-white border-[#E4D5C7] hover:border-[#A87C66]/50'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-extrabold text-[#4A3E3D] font-serif">
-                            ☕ 經典晨曦拿鐵特調
-                          </span>
-                          <span className="text-[10px] bg-[#E4D5C7] text-[#4A3E3D] font-bold px-2 py-0.5 rounded">
-                            基礎淨化
-                          </span>
-                        </div>
-                        <span className="text-lg font-black text-[#A87C66] font-mono">
-                          $100 <span className="text-xs font-normal">NTD</span>
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#7A6A63] font-serif leading-relaxed mb-2.5">
-                        以低溫烘焙濃縮與濃純鮮乳為基礎，撫平平時思緒雜訊，奠定安定踏實的能量基底。
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-[#A87C66]">
-                        <span className="flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded border border-[#A87C66]/20">
-                          ⚡ 能量指數 +15%
-                        </span>
-                        <span className="flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded border border-[#A87C66]/20">
-                          📜 經典【大吉】紙籤
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Option 2: $200 (Hot) */}
-                    <div
-                      onClick={() => setSelectedLuckPrice(200)}
-                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative ${
-                        selectedLuckPrice === 200
-                          ? 'bg-gradient-to-r from-amber-50 to-orange-50/90 border-amber-600 shadow-md ring-2 ring-amber-400'
-                          : 'bg-white border-[#E4D5C7] hover:border-amber-400'
-                      }`}
-                    >
-                      <div className="absolute -top-2.5 right-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs">
-                        🔥 熱門首選
-                      </div>
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-extrabold text-[#4A3E3D] font-serif">
-                            🍯 絲絨太妃拿鐵 ‧ 手作提拉米蘇甜點套餐
-                          </span>
-                        </div>
-                        <span className="text-lg font-black text-amber-800 font-mono">
-                          $200 <span className="text-xs font-normal">NTD</span>
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#7A6A63] font-serif leading-relaxed mb-2.5">
-                        在 $100 經典拿鐵的定心基底上，揉合焦香太妃糖特調與綿密義式提拉米蘇，甜美層次喚醒貴人緣分與好感好運，補充突破現實的充沛自信。
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-amber-900">
-                        <span className="flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded border border-amber-300">
-                          ⚡ 能量指數 +25% 顯著躍升
-                        </span>
-                        <span className="flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded border border-amber-300">
-                          📜 貴人相助【大吉】紙籤
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Option 3: $500 (Ultimate) */}
-                    <div
-                      onClick={() => setSelectedLuckPrice(500)}
-                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative ${
-                        selectedLuckPrice === 500
-                          ? 'bg-gradient-to-r from-amber-100/80 via-orange-50 to-amber-50 border-amber-700 shadow-md ring-2 ring-amber-500'
-                          : 'bg-white border-[#E4D5C7] hover:border-amber-500'
-                      }`}
-                    >
-                      <div className="absolute -top-2.5 right-4 bg-gradient-to-r from-amber-700 to-red-800 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs">
-                        ✨ 頂級大逆轉
-                      </div>
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-extrabold text-[#4A3E3D] font-serif">
-                            🍷 極致冷萃 ‧ 法式紅酒漢堡排奢華饗宴
-                          </span>
-                        </div>
-                        <span className="text-lg font-black text-amber-900 font-mono">
-                          $500 <span className="text-xs font-normal">NTD</span>
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#7A6A63] font-serif leading-relaxed mb-2.5">
-                        超越前兩款飲品與甜點的基礎，以長時間低萃慢釀的定心冷萃，搭配主廚特製醇厚紅酒燉漢堡排；扎實優質餐點帶來深層扎根力量，實現時空幾何的極致逆轉！
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-amber-950">
-                        <span className="flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded border border-amber-400">
-                          ⚡ 能量指數 +38% 爆發躍升
-                        </span>
-                        <span className="flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded border border-amber-400">
-                          📜 時空極致【大吉】紙籤
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Button */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleExecuteLuckPayment(selectedLuckPrice)}
-                      className="w-full py-3.5 bg-gradient-to-r from-[#A87C66] via-amber-800 to-[#4A3E3D] text-white rounded-xl text-sm font-extrabold hover:brightness-110 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4 text-amber-200" />
-                      <span>確認選擇，進行 ${selectedLuckPrice} NTD 改運加持儀式</span>
-                    </button>
-                  </div>
-                </div>
               )}
+
+              {/* MODAL BODY */}
+              <div className="overflow-y-auto flex-1 pr-1">
+                {isProcessingLuck ? (
+                  <div className="py-14 text-center space-y-5">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="w-16 h-16 border-4 border-[#A87C66] border-t-amber-300 rounded-full mx-auto flex items-center justify-center text-[#A87C66] shadow-inner"
+                    >
+                      <Coffee className="w-8 h-8 text-[#A87C66]" />
+                    </motion.div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-extrabold text-base sm:text-lg text-[#4A3E3D] font-serif">
+                        正在由翔子為您沖煮與準備餐點中...
+                      </h4>
+                      <p className="text-xs sm:text-sm text-[#A87C66] font-sans">
+                        提煉轉運氣場，準備大吉紙籤與餐點，請稍候片刻 ☕️
+                      </p>
+                    </div>
+                  </div>
+                ) : luckModalStep === 'served' && unlockedLuckBlessing ? (
+                  /* SHOKO SERVING MEAL PAGE (翔子端餐頁面) */
+                  <div className="py-2 space-y-6 text-center">
+                    
+                    {/* Shoko Serving Avatar in Daytime Cafe Setting */}
+                    <div className="relative flex flex-col items-center">
+                      {/* Daytime Cafe Background Glow */}
+                      <div className="absolute w-64 h-64 bg-amber-200/40 rounded-full blur-3xl pointer-events-none" />
+
+                      {/* Photo Frame with Shoko Holding Meal Tray with both hands in Daytime Cafe */}
+                      <div className="relative w-56 h-72 sm:w-64 sm:h-80 rounded-3xl p-2 bg-gradient-to-b from-[#FFFDF9] via-[#F5EBE6] to-[#C2AF9E] shadow-2xl border-4 border-[#8C5C42] overflow-hidden group">
+                        <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-amber-100 to-amber-200/50">
+                          <img
+                            src={shokoSmilingImg}
+                            alt="翔子將餐盤抱在胸前，瞇著眼睛開心地笑著"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />
+                          <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 bg-black/75 backdrop-blur-md text-amber-100 border border-amber-300/60 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-bold font-serif flex items-center gap-1.5 shadow-md whitespace-nowrap">
+                            <Coffee className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                            <span>咖啡師 • 翔子 (親自端餐✨)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Updated Shoko Copy Below Image as requested */}
+                      <div className="mt-4 bg-gradient-to-r from-amber-50 via-white to-amber-50 text-[#4A3E3D] px-5 py-4 rounded-2xl border-2 border-amber-300/90 shadow-md text-sm sm:text-base font-serif max-w-lg mx-auto relative text-center space-y-1.5">
+                        <div className="font-extrabold text-amber-950 text-base sm:text-lg leading-snug">
+                          翔子：「久等囉！為您端上『{unlockedLuckBlessing.name}』」
+                        </div>
+                        <div className="text-[#5C4D4B] font-medium text-xs sm:text-sm">
+                          還有附上了轉運御神紙籤喔 💓，請慢用～
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Omikuji Fortune Slip (時空轉運大吉紙籤) */}
+                    <div className="bg-gradient-to-br from-amber-50/95 to-amber-100/70 border-2 border-red-700/60 rounded-2xl p-5 sm:p-6 shadow-md relative overflow-hidden text-left max-w-lg mx-auto space-y-3.5">
+                      {/* Header with Large Red "大吉" Stamp */}
+                      <div className="flex justify-between items-start border-b border-red-200/80 pb-3 gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs bg-red-700 text-white font-extrabold px-2.5 py-0.5 rounded-md shadow-2xs">
+                              御神籤
+                            </span>
+                            <span className="text-xs text-amber-900 font-bold font-serif">
+                              翔子特別祝禱 ‧ 時空轉運
+                            </span>
+                          </div>
+                          <h4 className="text-base sm:text-lg font-extrabold text-[#4A3E3D] font-serif mt-1">
+                            {unlockedLuckBlessing.name}
+                          </h4>
+                        </div>
+
+                        {/* Red Stamp */}
+                        <div className="border-4 border-red-700 text-red-700 rounded-xl px-3 py-1 text-center font-serif font-black tracking-widest shadow-xs bg-red-50/90 transform rotate-[-3deg] flex-shrink-0">
+                          <span className="text-xl sm:text-2xl block leading-none">大吉</span>
+                          <span className="text-[9px] block font-bold mt-0.5">時空轉運</span>
+                        </div>
+                      </div>
+
+                      {/* Slip Details */}
+                      <div className="space-y-2.5 text-xs sm:text-sm text-[#4A3E3D] font-serif leading-relaxed">
+                        <div className="bg-white/90 p-3 rounded-xl border border-amber-200/80">
+                          <strong className="text-amber-900 block mb-0.5 font-sans">🍱 美食饗宴特質：</strong>
+                          {unlockedLuckBlessing.description}
+                        </div>
+
+                        <div className="bg-white/90 p-3 rounded-xl border border-amber-200/80">
+                          <strong className="text-amber-900 block mb-0.5 font-sans">📜 轉運祝禱詞：</strong>
+                          {unlockedLuckBlessing.blessingMantra}
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs pt-1">
+                          <span className="text-emerald-700 font-bold font-mono text-sm">
+                            ⚡ 能量指數升級 +{unlockedLuckBlessing.energyBoost}%
+                          </span>
+                          <span className="text-amber-800 text-xs font-medium">
+                            加持時間：{unlockedLuckBlessing.unlockedAt}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Confirm Action Button */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowLuckModal(false)}
+                        className="w-full max-w-lg py-4 bg-gradient-to-r from-amber-700 via-amber-800 to-[#4A3E3D] text-white rounded-2xl text-sm sm:text-base font-extrabold hover:brightness-110 active:scale-98 transition-all shadow-lg mx-auto flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <span>收下翔子端的餐點與「大吉」紙籤 ❤️</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* PACKAGE OPTIONS SELECTION VIEW (全面優化UI: 可複選與取消) */
+                  <div className="space-y-5">
+                    <div className="text-xs font-bold text-[#A87C66] bg-amber-100/60 px-3 py-1.5 rounded-lg border border-amber-200/80 inline-block">
+                      💡 提示：可同時點擊複選多個套餐儀式，再次點擊可取消選擇。
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      
+                      {/* Option 1: $100 NTD */}
+                      <div
+                        onClick={() => toggleLuckPriceOption(100)}
+                        className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                          selectedLuckPrices.includes(100)
+                            ? 'bg-gradient-to-r from-amber-50 via-white to-amber-50/60 border-[#A87C66] shadow-md ring-2 ring-[#A87C66]/40'
+                            : 'bg-white border-[#E4D5C7] hover:border-[#A87C66]/60 hover:bg-[#FAF5EE]/50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl shrink-0 mt-0.5 ${
+                            selectedLuckPrices.includes(100) ? 'bg-[#A87C66] text-white' : 'bg-[#E4D5C7]/60 text-[#4A3E3D]'
+                          }`}>
+                            ☕
+                          </div>
+
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="text-base sm:text-lg font-extrabold text-[#4A3E3D] font-serif leading-snug">
+                                ☕ 經典晨曦拿鐵特調
+                              </h4>
+                              <span className="text-[10px] bg-[#E4D5C7] text-[#4A3E3D] font-bold px-2 py-0.5 rounded-md shrink-0">
+                                基礎靜心淨化
+                              </span>
+                            </div>
+
+                            <p className="text-xs sm:text-sm text-[#7A6A63] font-serif leading-relaxed">
+                              以低溫烘焙濃縮與濃純鮮乳為基礎，撫平平時思緒雜訊，奠定安定踏實的能量基底。
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-[#A87C66]">
+                              <span className="bg-amber-100/70 text-amber-900 px-2.5 py-0.5 rounded-lg border border-amber-300/60">
+                                ⚡ 能量指數 +15%
+                              </span>
+                              <span className="bg-amber-100/70 text-amber-900 px-2.5 py-0.5 rounded-lg border border-amber-300/60">
+                                📜 經典【大吉】紙籤
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Price Tag & Check mark */}
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E4D5C7]/60 shrink-0">
+                          <div className="text-right">
+                            <span className="text-xl sm:text-2xl font-black text-[#A87C66] font-mono">
+                              $100
+                            </span>
+                            <span className="text-xs font-bold text-[#7A6A63] font-mono ml-1">NTD</span>
+                          </div>
+
+                          {selectedLuckPrices.includes(100) ? (
+                            <span className="text-xs bg-[#A87C66] text-white font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs mt-1">
+                              <Check className="w-3.5 h-3.5" /> 已選擇
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[#A87C66] font-bold mt-1">
+                              點擊勾選 +
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Option 2: $200 NTD (Hot) */}
+                      <div
+                        onClick={() => toggleLuckPriceOption(200)}
+                        className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                          selectedLuckPrices.includes(200)
+                            ? 'bg-gradient-to-r from-amber-100/90 via-orange-50 to-amber-50 border-amber-600 shadow-md ring-2 ring-amber-400'
+                            : 'bg-white border-[#E4D5C7] hover:border-amber-400 hover:bg-amber-50/30'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl shrink-0 mt-0.5 ${
+                            selectedLuckPrices.includes(200) ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white' : 'bg-amber-100 text-amber-900'
+                          }`}>
+                            🍯
+                          </div>
+
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="text-base sm:text-lg font-extrabold text-[#4A3E3D] font-serif leading-snug">
+                                🍯 絲絨太妃拿鐵 ‧ 手作提拉米蘇甜點套餐
+                              </h4>
+                              <span className="text-[10px] bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold px-2.5 py-0.5 rounded-full shadow-2xs shrink-0">
+                                🔥 熱門首選
+                              </span>
+                            </div>
+
+                            <p className="text-xs sm:text-sm text-[#7A6A63] font-serif leading-relaxed">
+                              在 $100 經典拿鐵的定心基底上，揉合焦香太妃糖特調與綿密義式提拉米蘇，甜美層次喚醒貴人緣分與好感好運，補充突破現實的充沛自信。
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-amber-950">
+                              <span className="bg-amber-200/80 text-amber-950 px-2.5 py-0.5 rounded-lg border border-amber-300">
+                                ⚡ 能量指數 +25% 顯著躍升
+                              </span>
+                              <span className="bg-amber-200/80 text-amber-950 px-2.5 py-0.5 rounded-lg border border-amber-300">
+                                📜 貴人相助【大吉】紙籤
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Price Tag & Check mark */}
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-200/60 shrink-0">
+                          <div className="text-right">
+                            <span className="text-xl sm:text-2xl font-black text-amber-800 font-mono">
+                              $200
+                            </span>
+                            <span className="text-xs font-bold text-amber-900 font-mono ml-1">NTD</span>
+                          </div>
+
+                          {selectedLuckPrices.includes(200) ? (
+                            <span className="text-xs bg-amber-600 text-white font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs mt-1">
+                              <Check className="w-3.5 h-3.5" /> 已選擇
+                            </span>
+                          ) : (
+                            <span className="text-xs text-amber-800 font-bold mt-1">
+                              點擊勾選 +
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Option 3: $500 NTD (Ultimate) */}
+                      <div
+                        onClick={() => toggleLuckPriceOption(500)}
+                        className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                          selectedLuckPrices.includes(500)
+                            ? 'bg-gradient-to-r from-amber-100 via-orange-100/70 to-amber-50 border-amber-700 shadow-lg ring-2 ring-amber-500'
+                            : 'bg-white border-[#E4D5C7] hover:border-amber-500 hover:bg-amber-50/40'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl shrink-0 mt-0.5 ${
+                            selectedLuckPrices.includes(500) ? 'bg-gradient-to-r from-amber-800 to-red-800 text-white' : 'bg-amber-200 text-amber-950'
+                          }`}>
+                            🍷
+                          </div>
+
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="text-base sm:text-lg font-extrabold text-[#4A3E3D] font-serif leading-snug">
+                                🍷 極致冷萃 ‧ 法式紅酒漢堡排奢華饗宴
+                              </h4>
+                              <span className="text-[10px] bg-gradient-to-r from-amber-700 to-red-800 text-white font-bold px-2.5 py-0.5 rounded-full shadow-2xs shrink-0">
+                                ✨ 頂級大逆轉
+                              </span>
+                            </div>
+
+                            <p className="text-xs sm:text-sm text-[#7A6A63] font-serif leading-relaxed">
+                              超越前兩款飲品與甜點的基礎，以長時間低萃慢釀的定心冷萃，搭配主廚特製醇厚紅酒燉漢堡排；扎實優質餐點帶來深層扎根力量，實現時空幾何的極致逆轉！
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-amber-950">
+                              <span className="bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-lg border border-amber-400">
+                                ⚡ 能量指數 +38% 爆發躍升
+                              </span>
+                              <span className="bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-lg border border-amber-400">
+                                📜 時空極致【大吉】紙籤
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Price Tag & Check mark */}
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-300/60 shrink-0">
+                          <div className="text-right">
+                            <span className="text-xl sm:text-2xl font-black text-amber-900 font-mono">
+                              $500
+                            </span>
+                            <span className="text-xs font-bold text-amber-950 font-mono ml-1">NTD</span>
+                          </div>
+
+                          {selectedLuckPrices.includes(500) ? (
+                            <span className="text-xs bg-amber-800 text-white font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs mt-1">
+                              <Check className="w-3.5 h-3.5" /> 已選擇
+                            </span>
+                          ) : (
+                            <span className="text-xs text-amber-900 font-bold mt-1">
+                              點擊勾選 +
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="pt-3">
+                      <button
+                        type="button"
+                        disabled={selectedLuckPrices.length === 0}
+                        onClick={handleExecuteLuckPayment}
+                        className={`w-full py-4 rounded-2xl text-sm sm:text-base font-extrabold transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer ${
+                          selectedLuckPrices.length > 0
+                            ? 'bg-gradient-to-r from-[#A87C66] via-amber-800 to-[#4A3E3D] text-white hover:brightness-110 active:scale-98'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-200" />
+                        <span>
+                          {selectedLuckPrices.length > 0
+                            ? `確認選擇 (${selectedLuckPrices.length} 項)，進行 $${selectedLuckPrices.reduce((a, b) => a + b, 0)} NTD 改運加持儀式`
+                            : '請點擊上方至少選擇一項餐點套餐'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </motion.div>
           </div>
         )}
@@ -3340,6 +3212,24 @@ export default function App() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* FLOATING ACTION BUTTON: SHARE FORTUNE (畫面右側浮動按鈕) */}
+      <AnimatePresence>
+        {isGridActive && matrixCards.length === 9 && !showShareModal && (
+          <motion.button
+            initial={{ opacity: 0, x: 50, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 50, scale: 0.9 }}
+            type="button"
+            onClick={() => setShowShareModal(true)}
+            className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 px-3.5 py-3 sm:px-4 sm:py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl border-2 border-amber-200/90 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer group backdrop-blur-xs"
+            title="點擊分享我的時空運勢圖卡"
+          >
+            <Share2 className="w-4 h-4 text-amber-100 group-hover:rotate-12 transition-transform" />
+            <span className="font-serif tracking-wide shadow-2xs">✨ 分享我的運勢</span>
+          </motion.button>
         )}
       </AnimatePresence>
 

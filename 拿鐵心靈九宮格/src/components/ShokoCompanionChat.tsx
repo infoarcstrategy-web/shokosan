@@ -40,7 +40,7 @@ export const ShokoCompanionChat: React.FC<ShokoCompanionChatProps> = ({
 
   // Quick prompt presets
   const quickPrompts = [
-    '💡 翔子，依據「知行落差」分析，我明天第一步具體可以做什麼？',
+    '💡 翔子，我明天第一步具體可以做什麼？',
     '🧭 如果我選擇執行備案，環境軸的阻力會變小嗎？',
     '📋 幫我把這份九宮格報告，整理成 3 個明確行動清單',
     '☕️ 我現在心裡感覺有點焦慮，牌陣建議我如何安定情緒？'
@@ -171,27 +171,9 @@ export const ShokoCompanionChat: React.FC<ShokoCompanionChatProps> = ({
               <span>翔子的悄悄話</span>
             </h3>
             <p className="text-xs text-[#7A6A63] font-serif mt-0.5">
-              基於九宮格三大構面與「未來的自己」，為您提供專屬溫暖收斂與心理支持
+              別鬧彆扭了，讓大姊姊聽聽吧～
             </p>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-[#A87C66] font-bold font-mono bg-[#E4D5C7]/40 px-3 py-1.5 rounded-lg">
-            <Coffee className="w-4 h-4 text-[#A87C66]" />
-            <span>最後的點餐時間</span>
-          </div>
-
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-lg bg-amber-100/80 hover:bg-amber-200 text-[#4A3E3D] transition-colors"
-              title="返回報告"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
         </div>
       </div>
 
