@@ -188,14 +188,9 @@ export const OrderBell: React.FC<OrderBellProps> = ({ onRingBell, disabled = fal
 
         {/* Action Label Below Bell */}
         <div className="mt-1.5 sm:mt-2 text-center">
-          <div className="text-xs sm:text-sm font-extrabold text-[#4A3E3D] font-serif flex items-center gap-1.5 justify-center">
-            <Bell className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
-            <span>點擊點餐鈴 • 送單開牌</span>
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+          <div className="text-xs sm:text-sm font-extrabold text-[#4A3E3D] font-serif flex items-center justify-center">
+            <span>點好了，翔子小姐~</span>
           </div>
-          <p className="text-[10px] sm:text-[11px] text-[#A87C66] font-sans mt-0.5">
-            按響點餐鈴，開啟時空洗牌儀式
-          </p>
         </div>
       </motion.button>
     </div>

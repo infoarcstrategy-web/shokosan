@@ -269,6 +269,19 @@ export default function App() {
     }
   };
 
+  // Return to homepage / initial state
+  const handleReturnToHome = () => {
+    setSelectedHistoryItem(null);
+    setMatrixCards([]);
+    setRevealedCards(Array(9).fill(false));
+    setIsSaved(false);
+    setReadingNotes('');
+    setShufflingStage('idle');
+    setReadingSubTab('result');
+    setUserQuestion('');
+    setHasHandedMenu(false);
+  };
+
   // Luck Tuning / Fortune Transformation State
   const [showLuckModal, setShowLuckModal] = useState(false);
   const [selectedLuckPrices, setSelectedLuckPrices] = useState<number[]>([200]);
@@ -281,6 +294,7 @@ export default function App() {
     blessingMantra: string;
     energyBoost: number;
     unlockedAt: string;
+    fortune?: string;
   } | null>(null);
 
   const toggleLuckPriceOption = (price: number) => {
@@ -324,13 +338,23 @@ export default function App() {
         totalBoost += 38;
       }
 
+      let fortune = '大吉';
+      if (selectedLuckPrices.includes(500)) {
+        fortune = '大吉';
+      } else if (selectedLuckPrices.includes(200)) {
+        fortune = '中吉';
+      } else if (selectedLuckPrices.includes(100)) {
+        fortune = '小吉';
+      }
+
       setUnlockedLuckBlessing({
         price: totalPrice,
         name: names.join(' ✦ '),
         description: descs.join(' '),
         blessingMantra: mantras.join(' '),
         energyBoost: totalBoost,
-        unlockedAt: nowStr
+        unlockedAt: nowStr,
+        fortune
       });
     }, 1800);
   };
@@ -350,6 +374,8 @@ export default function App() {
 
   // Zoomed card lightbox modal state
   const [activeZoomCardIndex, setActiveZoomCardIndex] = useState<number | null>(null);
+  const [zoomCardFlipped, setZoomCardFlipped] = useState<boolean>(false);
+  const [activeGapIndex, setActiveGapIndex] = useState<number>(0);
 
   // Share fortune card modal states
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
@@ -374,6 +400,7 @@ export default function App() {
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualCards, setManualCards] = useState<(Card | null)[]>(Array(9).fill(null));
   const [activeManualHoverSlot, setActiveManualHoverSlot] = useState<number | null>(null);
+  const [showShokoManualTips, setShowShokoManualTips] = useState(true);
 
   // Suits & Ranks constants
   const ALL_SUITS: Card['suit'][] = ['黑桃', '紅心', '方塊', '梅花'];
@@ -805,10 +832,6 @@ export default function App() {
       <div className="relative z-10">
         {/* HEADER SECTION */}
       <header className="max-w-6xl mx-auto px-3 sm:px-4 pt-5 sm:pt-10 pb-4 sm:pb-8 text-center border-b border-[#E4D5C7] mb-4 sm:mb-8">
-        <div className="inline-flex items-center justify-center space-x-1.5 sm:space-x-2 bg-[#E4D5C7] text-[#A87C66] px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold tracking-wider mb-2.5 sm:mb-4 hover:scale-105 transition-transform max-w-[95%]">
-          <Coffee className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" />
-          <span className="truncate">靜心靈性吧台 • 溫厚暖心特調</span>
-        </div>
         
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#4A3E3D] font-serif mb-1.5 sm:mb-3">
           心靈拿鐵咖啡館
@@ -880,15 +903,12 @@ export default function App() {
                   <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#A87C66]/20 rounded-full blur-xl pointer-events-none" />
                   
                   <div className="flex items-center gap-2.5 sm:gap-3.5 z-10 min-w-0">
-                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#A87C66] to-[#8C5C42] border border-[#E4D5C7]/40 flex items-center justify-center text-amber-100 shadow-inner flex-shrink-0">
-                      <Coffee className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <h2 className="text-base sm:text-xl font-extrabold font-serif text-[#FAF4F0] tracking-wide">
-                          ☕ 心靈拿鐵咖啡館 • 點餐檯
+                          心靈拿鐵咖啡館 • 點餐檯
                         </h2>
-                        <span className="text-[9px] sm:text-[10px] font-mono bg-amber-400/20 text-amber-200 border border-amber-300/30 px-2 py-0.5 rounded-full font-bold">
+                        <span className="text-[9px] sm:text-[10px] font-mono bg-amber-400/20 text-amber-200 border border-amber-300/30 px-2 py-0.5 rounded-full font-bold animate-pulse">
                           OPEN
                         </span>
                       </div>
@@ -896,12 +916,6 @@ export default function App() {
                         「在時空沒有攪拌的平行世界裡，看見每個時間線上的你。」
                       </p>
                     </div>
-                  </div>
-
-                  {/* Cafe Info Badge */}
-                  <div className="z-10 flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono text-[#E4D5C7] bg-[#3A2E2D]/80 border border-[#A87C66]/40 px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0">
-                    <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
-                    <span>時空矩陣 9 宮格吧台</span>
                   </div>
                 </div>
 
@@ -1403,7 +1417,7 @@ export default function App() {
                 </div>
 
                 <p className="text-[#7A6A63] text-xs sm:text-sm leading-relaxed my-5 max-w-md font-serif">
-                  平心靜氣，感受精緻的冷萃拿鐵水滴緩緩落入杯中、於心靈湖面擴散出平靜波紋。<br className="hidden sm:inline" />
+                  平心靜氣，感受精緻的冷萃咖啡液緩緩落入杯中、於心靈湖面擴散出平靜波紋。<br className="hidden sm:inline" />
                   當內心達到和諧與沉靜時，請點擊下方按鈕開始發牌。
                 </p>
 
@@ -1425,70 +1439,78 @@ export default function App() {
               </div>
             )}
 
-            {/* STAGE 2: CARDS SHUFFLING ANIMATION (POURING LATTE INTO 9 ARRANGED MUGS) */}
+            {/* STAGE 2: CARDS SHUFFLING ANIMATION (FOUR LATTES WAVING DANCE) */}
             {shufflingStage === 'shuffling' && (
               <div className="max-w-xl mx-auto py-12 px-6 bg-[#E4D5C7]/20 border border-[#E4D5C7] rounded-2xl text-center space-y-6 shadow-xs">
-                {/* 9 Arranged Mugs Grid receiving latte stream */}
-                <div className="relative max-w-xs mx-auto">
-                  <div className="grid grid-cols-3 gap-3">
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: i * 0.05 }}
-                        className="relative bg-[#FAF5EE] border-2 border-[#C2AF9E] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-xs overflow-hidden h-16 sm:h-20"
-                      >
-                        {/* Mug Handle */}
-                        <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-6 border-2 border-[#C2AF9E] rounded-r-md bg-[#FAF5EE]" />
+                {/* Four horizontal lattes waving like a wave */}
+                <div className="flex justify-center items-center gap-4 sm:gap-6 py-6 overflow-hidden">
+                  {[0, 1, 2, 3].map((i) => (
+                    <motion.div
+                      key={i}
+                      animate={{
+                        y: [-16, 16, -16],
+                      }}
+                      transition={{
+                        duration: 1.4,
+                        repeat: Infinity,
+                        delay: i * 0.2,
+                        ease: "easeInOut"
+                      }}
+                      className="relative flex flex-col items-center"
+                    >
+                      {/* Latte Cup Shape */}
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[#FAF5EE] via-[#EFE6DB] to-[#D8C7B8] border-2 border-[#C2AF9E] shadow-md flex items-center justify-center relative">
+                        {/* Cup Handle */}
+                        <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-5 border-2 border-[#C2AF9E] rounded-r-md bg-[#FAF5EE]" />
                         
-                        {/* Mug Top Foam filling */}
-                        <motion.div
-                          animate={{
-                            height: ['10%', '85%', '10%'],
-                            backgroundColor: ['#E2C4A8', '#FFF8F0', '#E2C4A8']
-                          }}
-                          transition={{
-                            duration: 1.8,
-                            repeat: Infinity,
-                            delay: i * 0.12,
-                            ease: "easeInOut"
-                          }}
-                          className="absolute bottom-0 inset-x-0 bg-[#FFF8F0] border-t border-[#D2BCA6] flex items-center justify-center overflow-hidden"
-                        >
-                          <span className="text-[9px] text-[#A87C66] font-bold opacity-80">☕️ {i + 1}</span>
-                        </motion.div>
-
-                        {/* Steam rising */}
-                        <motion.div
-                          animate={{ y: [-2, -8, -2], opacity: [0.2, 0.8, 0.2] }}
-                          transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.1 }}
-                          className="absolute -top-1 text-[10px] pointer-events-none"
-                        >
-                          ♨️
-                        </motion.div>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {/* Silky Latte Pouring Stream Animation */}
-                  <motion.div
-                    animate={{ x: [-90, 90, -90] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-0 left-1/2 -translate-x-1/2 -mt-8 flex flex-col items-center pointer-events-none z-20"
-                  >
-                    <div className="text-xs">🥛</div>
-                    <div className="w-1.5 h-12 bg-gradient-to-b from-[#FFFDF9] via-[#F3E5D8] to-[#A87C66] rounded-full shadow-xs opacity-90" />
-                  </motion.div>
+                        {/* Coffee creama inside */}
+                        <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#583520] flex items-center justify-center overflow-hidden relative">
+                          {/* Latte Art foam */}
+                          <motion.div
+                            animate={{
+                              scale: [0.9, 1.1, 0.9],
+                              opacity: [0.8, 1, 0.8]
+                            }}
+                            transition={{
+                              duration: 1.4,
+                              repeat: Infinity,
+                              delay: i * 0.2,
+                              ease: "easeInOut"
+                            }}
+                            className="w-6.5 h-6.5 sm:w-9 sm:h-9 rounded-full bg-[#FFF9F2] shadow-inner flex items-center justify-center"
+                          >
+                            <span className="text-[10px] sm:text-xs font-bold text-[#A87C66]">☕️</span>
+                          </motion.div>
+                        </div>
+                      </div>
+                      
+                      {/* Rising steam */}
+                      <motion.span
+                        animate={{
+                          y: [-2, -8, -2],
+                          opacity: [0.2, 0.8, 0.2]
+                        }}
+                        transition={{
+                          duration: 1.2,
+                          repeat: Infinity,
+                          delay: i * 0.2,
+                          ease: "easeInOut"
+                        }}
+                        className="text-xs mt-1 pointer-events-none"
+                      >
+                        ♨️
+                      </motion.span>
+                    </motion.div>
+                  ))}
                 </div>
 
                 <div className="space-y-1">
                   <h4 className="text-base sm:text-lg font-extrabold text-[#4A3E3D] font-serif flex items-center justify-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#A87C66] animate-spin" />
-                    <span>正在將滑順拿鐵注入 9 座時空馬克杯中...</span>
+                    <span>正在將暖心拿鐵注入 9 座時空馬克杯中...</span>
                   </h4>
                   <p className="text-xs text-[#7A6A63] font-serif">
-                    費雪-葉茲隨機演算法 (Fisher-Yates) 嚴格分配花色點數中
+                    四杯橫列拿鐵跳著波浪舞，由左至右傳遞著變好喝魔法
                   </p>
                 </div>
               </div>
@@ -1538,30 +1560,7 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Mobile Quick Jump Navigation Pills */}
-                  {readingSubTab === 'result' && (
-                    <div className="flex sm:hidden items-center justify-center gap-1.5 pt-1 overflow-x-auto w-full px-2 text-[11px] font-bold">
-                      <span className="text-[#A87C66] whitespace-nowrap text-[10px]">📱 手機速跳：</span>
-                      <button
-                        onClick={() => document.getElementById('nine-grid-cards')?.scrollIntoView({ behavior: 'smooth' })}
-                        className="px-2 py-0.5 bg-white border border-[#D2BCA6] rounded-full text-[#4A3E3D] hover:bg-[#F5EBE6] whitespace-nowrap shadow-2xs"
-                      >
-                        🃏 9宮牌陣
-                      </button>
-                      <button
-                        onClick={() => document.getElementById('structure-breakdown-card')?.scrollIntoView({ behavior: 'smooth' })}
-                        className="px-2 py-0.5 bg-white border border-[#D2BCA6] rounded-full text-[#4A3E3D] hover:bg-[#F5EBE6] whitespace-nowrap shadow-2xs"
-                      >
-                        📐 結構落差
-                      </button>
-                      <button
-                        onClick={() => document.getElementById('shoko-chat-card')?.scrollIntoView({ behavior: 'smooth' })}
-                        className="px-2 py-0.5 bg-[#4A3E3D] text-[#F5EBE6] rounded-full whitespace-nowrap shadow-2xs"
-                      >
-                        💬 翔子陪伴
-                      </button>
-                    </div>
-                  )}
+
                 </div>
 
                 {/* SUB-VIEW 1: RESULT SCREEN (九宮格結果 - 直觀完整排列) */}
@@ -1603,7 +1602,6 @@ export default function App() {
                       <div className="grid grid-cols-3 gap-1.5 sm:gap-5">
                         {GRID_POSITIONS.map((pos, index) => {
                           const card = matrixCards[index];
-                          const isInspected = revealedCards[index];
 
                           return (
                             <motion.div
@@ -1611,29 +1609,24 @@ export default function App() {
                               initial={{ opacity: 0, scale: 0.9, y: 15 }}
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               transition={{ duration: 0.4, delay: index * 0.08 }}
-                              className="flex flex-col h-full bg-[#E4D5C7]/10 rounded-xl border border-[#E4D5C7] overflow-hidden group shadow-2xs hover:shadow-md transition-all cursor-pointer"
+                              className="flex flex-col h-full bg-[#E4D5C7]/10 rounded-xl border border-[#E4D5C7] overflow-hidden group shadow-2xs hover:shadow-md transition-all cursor-pointer active:scale-98"
                               onClick={() => {
-                                setRevealedCards(prev => {
-                                  const next = [...prev];
-                                  next[index] = true;
-                                  return next;
-                                });
                                 setActiveZoomCardIndex(index);
+                                setZoomCardFlipped(false);
                               }}
                             >
                               {/* Position Label Bar */}
-                              <div className="bg-[#E4D5C7] px-1.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold text-[#4A3E3D] border-b border-[#D2BCA6] flex justify-between items-center">
-                                <span className="truncate max-w-[60px] sm:max-w-none">
+                              <div className="bg-[#E4D5C7]/30 px-1.5 sm:px-3 py-1 sm:py-1.5 border-b border-[#E4D5C7] flex items-center justify-between text-left select-none flex-shrink-0">
+                                <span className="font-extrabold text-[#4A3E3D] font-serif text-[10px] sm:text-xs truncate">
                                   {pos.name}
                                 </span>
                                 <span className="font-sans text-[8px] sm:text-[10px] bg-[#F5EBE6] px-1 sm:px-1.5 py-0.5 rounded text-[#A87C66] flex-shrink-0 flex items-center gap-1">
-                                  {isInspected && <span className="text-amber-800 font-bold">已閱</span>}
                                   P{pos.id}
                                 </span>
                               </div>
 
                               {/* Card Face View */}
-                              <div className="flex-1 p-1.5 sm:p-3 flex flex-col items-center justify-between min-h-[110px] sm:min-h-[165px] relative">
+                              <div className="flex-1 p-1.5 sm:p-3 flex flex-col items-center justify-center min-h-[110px] sm:min-h-[165px] relative">
                                 {card ? (
                                   <StandardPokerCardFace card={card} />
                                 ) : (
@@ -1641,11 +1634,6 @@ export default function App() {
                                     未選牌
                                   </div>
                                 )}
-
-                                <div className="w-full pt-1 mt-1 border-t border-[#E4D5C7]/60 flex items-center justify-between text-[8px] sm:text-[10px] text-[#A87C66] font-bold">
-                                  <span className="truncate">點擊放大看牌義</span>
-                                  <ZoomIn className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#A87C66] flex-shrink-0 group-hover:scale-125 transition-transform" />
-                                </div>
                               </div>
                             </motion.div>
                           );
@@ -1690,38 +1678,75 @@ export default function App() {
                               {/* Card & Detailed Interpretation Body */}
                               <div className="overflow-y-auto flex-1 space-y-4 pr-1">
                                 <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
-                                  {/* Magnified Card Face */}
-                                  <div className="w-36 h-52 sm:w-44 sm:h-64 flex-shrink-0 shadow-lg rounded-xl overflow-hidden border-2 border-[#A87C66]">
-                                    <StandardPokerCardFace card={matrixCards[activeZoomCardIndex]} isLarge={true} />
-                                  </div>
+                                  {/* Magnified Card Face displaying interpretation directly, overlaying pips */}
+                                  {(() => {
+                                    const cardObj = matrixCards[activeZoomCardIndex];
+                                    const isRed = cardObj.suit === '紅心' || cardObj.suit === '方塊';
+                                    const suitSymbol = cardObj.suit === '黑桃' ? '♠' : cardObj.suit === '紅心' ? '♥' : cardObj.suit === '方塊' ? '♦' : '♣';
+                                    const textColor = isRed ? 'text-red-600' : 'text-slate-900';
+                                    return (
+                                      <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                                        <div className="w-44 h-64 sm:w-52 sm:h-76 flex-shrink-0 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 relative">
+                                          {/* Direct Card Face displaying interpretation text overlaid on suits/pips */}
+                                          <div className="w-full h-full bg-gradient-to-b from-white via-[#FFFDF9] to-[#F8F3ED] border-2 border-[#A87C66] rounded-xl p-2.5 sm:p-3.5 flex flex-col justify-between relative select-none">
+                                            {/* Top Left Corner Index */}
+                                            <div className="flex items-center gap-0.5 leading-none">
+                                              <span className={`font-black font-sans tracking-tighter ${textColor} text-sm sm:text-base`}>
+                                                {cardObj.rank}
+                                              </span>
+                                              <span className={`font-sans ${textColor} text-xs sm:text-sm`}>
+                                                {suitSymbol}
+                                              </span>
+                                            </div>
+                                            
+                                            {/* Center Area: Covered directly with the Interpretation text replacing card pips */}
+                                            <div className="flex-1 flex flex-col justify-center my-1.5 text-center overflow-y-auto px-1">
+                                              <span className="text-[10px] sm:text-xs font-black text-[#A87C66] mb-1 font-serif tracking-widest block uppercase">
+                                                ✦ {cardObj.suit}{cardObj.rank} · 牌義 ✦
+                                              </span>
+                                              <p className="text-[10px] sm:text-xs text-[#4A3E3D] font-serif font-medium leading-relaxed max-h-[140px] sm:max-h-[180px] overflow-y-auto scrollbar-thin">
+                                                {getCardInterpretation(cardObj, GRID_POSITIONS[activeZoomCardIndex].role).text}
+                                              </p>
+                                            </div>
 
-                                  {/* Detailed Interpretation */}
-                                  <div className="flex-1 space-y-3">
-                                    <div className="flex flex-wrap items-center justify-between gap-1 border-b border-[#E4D5C7] pb-2">
-                                      <span className="text-sm font-extrabold text-[#4A3E3D] font-serif">
-                                        {matrixCards[activeZoomCardIndex].suit} {matrixCards[activeZoomCardIndex].rank}
-                                      </span>
-                                      <span className="px-2.5 py-0.5 bg-[#A87C66] text-white text-xs font-bold rounded-full shadow-2xs">
-                                        {getCardInterpretation(matrixCards[activeZoomCardIndex], GRID_POSITIONS[activeZoomCardIndex].role).keyword}
-                                      </span>
-                                    </div>
-
-                                    <div className="bg-white border border-[#E4D5C7] rounded-xl p-3.5 space-y-2 shadow-2xs">
-                                      <div className="text-xs font-bold text-[#A87C66] flex items-center gap-1.5 font-sans">
-                                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                                        <span>單牌與時空角色綜合解讀：</span>
+                                            {/* Bottom Right Corner Index (Inverted) */}
+                                            <div className="flex items-center gap-0.5 leading-none self-end rotate-180">
+                                              <span className={`font-black font-sans tracking-tighter ${textColor} text-sm sm:text-base`}>
+                                                {cardObj.rank}
+                                              </span>
+                                              <span className={`font-sans ${textColor} text-xs sm:text-sm`}>
+                                                {suitSymbol}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
                                       </div>
-                                      <p className="text-xs sm:text-sm text-[#4A3E3D] font-serif leading-relaxed">
-                                        {getCardInterpretation(matrixCards[activeZoomCardIndex], GRID_POSITIONS[activeZoomCardIndex].role).text}
-                                      </p>
+                                    );
+                                  })()}
+ 
+                                  {/* Detailed Interpretation */}
+                                  <div className="flex-1 space-y-3 flex flex-col justify-between h-full w-full">
+                                    {/* Shoko's Whisper Mode Image Companion */}
+                                    <div className="relative border-2 border-[#D2BCA6] rounded-2xl overflow-hidden bg-amber-50/40 shadow-xs flex-1 flex items-center justify-center max-h-[140px] sm:max-h-[180px]">
+                                      <img 
+                                        src={shokoWhisperImg} 
+                                        alt="翔子的悄悄話" 
+                                        referrerPolicy="no-referrer"
+                                        className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-500" 
+                                      />
+                                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#4A3E3D]/80 to-transparent p-1.5 text-center">
+                                        <span className="text-[10px] text-[#FAF5EE] font-serif tracking-widest font-extrabold flex items-center justify-center gap-1">
+                                          💬 翔子的悄悄話
+                                        </span>
+                                      </div>
                                     </div>
-
-                                    {/* Shoko's Advice */}
-                                    <div className="bg-amber-50/90 border border-amber-300 rounded-xl p-3 space-y-1 text-xs text-[#4A3E3D] font-serif">
-                                      <span className="font-extrabold text-amber-900 block text-[11px] font-sans">
-                                        ☕ 翔子的位置調劑建言：
+ 
+                                    {/* Shoko's Advice (翔子的「變好喝魔法」) */}
+                                    <div className="bg-amber-50/90 border border-amber-300 rounded-xl p-3.5 space-y-1 text-xs text-[#4A3E3D] font-serif flex-shrink-0">
+                                      <span className="font-extrabold text-amber-950 block text-xs font-sans flex items-center gap-1">
+                                        ☕ 翔子的「變好喝魔法」：
                                       </span>
-                                      <p className="leading-relaxed text-[11px] text-[#5C4D4B]">
+                                      <p className="leading-relaxed text-xs text-[#5C4D4B]">
                                         在【{GRID_POSITIONS[activeZoomCardIndex].name}】出現 {matrixCards[activeZoomCardIndex].suit}{matrixCards[activeZoomCardIndex].rank}，提醒您留意此處的時空波幅，善用其專屬關鍵能量來優化局勢。
                                       </p>
                                     </div>
@@ -1777,7 +1802,7 @@ export default function App() {
                                 </p>
                               </div>
                               <span className="text-xs bg-[#E4D5C7] text-[#4A3E3D] px-3 py-1 rounded-full font-bold">
-                                結構化決策輔助
+                                堆砌你的命運
                               </span>
                             </div>
 
@@ -1788,8 +1813,7 @@ export default function App() {
                               className="w-full py-2.5 px-3.5 bg-[#E4D5C7]/60 border border-[#D2BCA6] rounded-xl text-xs font-extrabold text-[#4A3E3D] flex items-center justify-between hover:bg-[#E4D5C7] transition-all shadow-2xs cursor-pointer"
                             >
                               <span className="flex items-center gap-1.5 font-sans">
-                                <Sliders className="w-4 h-4 text-[#A87C66]" />
-                                {structureExpanded ? '收合四大構面細部內容' : '📱 展開完整構面拆解與細節分析 (點擊展開查閱)'}
+                                {structureExpanded ? '收合四大構面細部內容' : '穿梭完整時空'}
                               </span>
                               <ChevronDown className={`w-4 h-4 text-[#A87C66] transition-transform duration-300 ${structureExpanded ? 'rotate-180' : ''}`} />
                             </button>
@@ -1935,56 +1959,229 @@ export default function App() {
                             </div>
                             </div>
 
-                            {/* 4. OBJECTIVE GAP ANALYSIS MATRIX */}
-                            <div className="space-y-4 pt-2 border-t border-[#E4D5C7]">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-extrabold text-base text-[#4A3E3D] font-serif flex items-center gap-2">
-                                  <Compass className="w-4 h-4 text-[#A87C66]" />
-                                  <span>三大構面交叉落差指標（明確標示解讀依據）</span>
-                                </h4>
-                                <span className="text-[10px] bg-[#A87C66] text-white px-2.5 py-0.5 rounded font-bold">
-                                  交叉落差矩陣
-                                </span>
-                              </div>
+                            {/* 4. OBJECTIVE GAP ANALYSIS MATRIX WITH GAUGE & CAROUSEL */}
+                            {(() => {
+                              const p2 = matrixCards[1]; // Pos 2 現在意識 (思考)
+                              const p8 = matrixCards[7]; // Pos 8 核心作為 (行動)
+                              
+                              let alignmentScore = 80;
+                              if (p2 && p8) {
+                                const isHighSync = !(p2.suit === '黑桃' && p8.suit !== '黑桃') && !((p2.suit === '紅心' || p2.suit === '梅花') && p8.suit === '黑桃');
+                                const isLag = p2.suit === '黑桃' && p8.suit !== '黑桃';
+                                const isRetreat = (p2.suit === '紅心' || p2.suit === '梅花') && p8.suit === '黑桃';
 
-                              <div className="grid grid-cols-1 gap-3.5">
-                                {[
-                                  structureBreakdown.gaps.knowDoGap,
-                                  structureBreakdown.gaps.beliefRealityGap,
-                                  structureBreakdown.gaps.actionEnvGap
-                                ].map((gap) => (
-                                  <div
-                                    key={gap.type}
-                                    className="bg-gradient-to-r from-white via-amber-50/20 to-[#F5EBE6]/40 border border-[#E4D5C7] rounded-xl p-4 space-y-2 shadow-2xs"
-                                  >
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                      <span className="font-extrabold text-xs sm:text-sm text-[#4A3E3D] font-sans">
-                                        {gap.title}
-                                      </span>
-                                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${gap.badgeStyle.bg} ${gap.badgeStyle.text} ${gap.badgeStyle.border}`}>
-                                        {gap.levelTag}
-                                      </span>
-                                    </div>
+                                let baseScore = 95;
+                                if (isHighSync) baseScore = 92;
+                                else if (isLag) baseScore = 65;
+                                else if (isRetreat) baseScore = 42;
 
-                                    <p className="text-xs text-[#4A3E3D] font-serif leading-relaxed">
-                                      {gap.description}
-                                    </p>
+                                const rankValues: Record<string, number> = {
+                                  'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1
+                                };
+                                const val2 = rankValues[p2.rank] || 7;
+                                const val8 = rankValues[p8.rank] || 7;
+                                const diff = Math.abs(val2 - val8);
 
-                                    <div className="bg-amber-50/90 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-950 font-serif leading-relaxed flex items-start gap-2">
-                                      <Sparkles className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
-                                      <div>
-                                        <strong className="text-amber-900 font-sans block mb-0.5">具體行動推力（非泛泛之論）：</strong>
-                                        {gap.actionPush}
+                                let finalScore = baseScore - diff * 1.5;
+                                if (isHighSync) {
+                                  finalScore = Math.max(85, Math.min(98, finalScore));
+                                } else if (isLag) {
+                                  finalScore = Math.max(58, Math.min(75, finalScore));
+                                } else {
+                                  finalScore = Math.max(30, Math.min(52, finalScore));
+                                }
+                                alignmentScore = Math.round(finalScore);
+                              }
+
+                              const angleInRadians = (alignmentScore / 100) * Math.PI;
+                              const xActive = 100 - 70 * Math.cos(angleInRadians);
+                              const yActive = 100 - 70 * Math.sin(angleInRadians);
+                              
+                              // Shortened and beautified tapered needle geometry
+                              const L = 36;
+                              const xEnd = 100 - L * Math.cos(angleInRadians);
+                              const yEnd = 100 - L * Math.sin(angleInRadians);
+                              
+                              const perpAngle = angleInRadians + Math.PI / 2;
+                              const baseWidth = 4.5;
+                              const xBaseLeft = 100 - baseWidth * Math.cos(perpAngle);
+                              const yBaseLeft = 100 - baseWidth * Math.sin(perpAngle);
+                              const xBaseRight = 100 + baseWidth * Math.cos(perpAngle);
+                              const yBaseRight = 100 + baseWidth * Math.sin(perpAngle);
+                              
+                              let gaugeColor = '#10B981'; // green-500
+                              let gaugeBgClass = 'bg-emerald-50 text-emerald-900 border-emerald-200';
+                              let gaugeText = '✨ 身心相印 / 知行合一';
+                              if (alignmentScore < 55) {
+                                gaugeColor = '#EF4444'; // red-500
+                                gaugeBgClass = 'bg-rose-50 text-rose-900 border-rose-200';
+                                gaugeText = '🛡️ 防衛退縮 / 行為阻滯';
+                              } else if (alignmentScore <= 75) {
+                                gaugeColor = '#F59E0B'; // amber-500
+                                gaugeBgClass = 'bg-amber-50 text-amber-900 border-amber-200';
+                                gaugeText = '⚖️ 知行滯後 / 思慮過度';
+                              }
+
+                              const gapsArray = [
+                                structureBreakdown.gaps.knowDoGap,
+                                structureBreakdown.gaps.beliefRealityGap,
+                                structureBreakdown.gaps.actionEnvGap
+                              ];
+                              
+                              const activeGap = gapsArray[activeGapIndex % gapsArray.length];
+
+                              return (
+                                <div className="space-y-4 pt-4 border-t border-[#E4D5C7]">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-extrabold text-base text-[#4A3E3D] font-serif flex items-center gap-2">
+                                      <Compass className="w-4 h-4 text-[#A87C66]" />
+                                      <span>身心契合度量能分析</span>
+                                    </h4>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Left Column: Custom SVG Gauge Dashboard */}
+                                    <div className="bg-gradient-to-b from-white to-[#F5EBE6]/30 border border-[#E4D5C7] rounded-xl p-4 flex flex-col items-center justify-between text-center relative overflow-hidden shadow-2xs min-h-[220px]">
+                                      {/* Clean, Non-overlapping Top Header */}
+                                      <div className="w-full flex justify-between items-center pb-2 border-b border-[#E4D5C7]/50 mb-1">
+                                        <div className="text-left">
+                                          <span className="text-[10px] text-[#A87C66] font-bold tracking-wider block uppercase">契合指數</span>
+                                          <span className="text-xl font-extrabold font-mono text-[#4A3E3D] block leading-none mt-1">{alignmentScore}%</span>
+                                        </div>
+                                        <div className="text-right text-[10px] text-[#7A6A63] font-serif leading-normal">
+                                          <div>時空共振</div>
+                                          <div className="font-sans font-bold text-[#A87C66]">中軸波幅</div>
+                                        </div>
+                                      </div>
+
+                                      {/* Gauge Graphic */}
+                                      <div className="relative w-full max-w-[180px] aspect-[200/120] my-2">
+                                        <svg viewBox="0 0 200 120" className="w-full h-full overflow-visible">
+                                          {/* Outer ticks / markers */}
+                                          <path d="M 24,100 A 76,76 0 0,1 176,100" fill="none" stroke="#E4D5C7" strokeWidth="1" strokeDasharray="3,3" />
+                                          
+                                          {/* Background Track */}
+                                          <path d="M 30,100 A 70,70 0 0,1 170,100" fill="none" stroke="#E4D5C7" strokeWidth="12" strokeLinecap="round" />
+                                          
+                                          {/* Colored Arc to show level gradient */}
+                                          {alignmentScore > 0 && (
+                                            <path d={`M 30,100 A 70,70 0 0,1 ${xActive},${yActive}`} fill="none" stroke={gaugeColor} strokeWidth="12" strokeLinecap="round" />
+                                          )}
+                                          
+                                          {/* Beautiful, tapered sleek Needle */}
+                                          <polygon 
+                                            points={`${xBaseLeft},${yBaseLeft} ${xEnd},${yEnd} ${xBaseRight},${yBaseRight}`} 
+                                            fill="#4A3E3D" 
+                                            stroke="#A87C66" 
+                                            strokeWidth="0.75" 
+                                            strokeLinejoin="round" 
+                                          />
+
+                                          {/* Stylized Center Cap */}
+                                          <circle cx="100" cy="100" r="7" fill="#4A3E3D" stroke="#A87C66" strokeWidth="1.5" />
+                                          <circle cx="100" cy="100" r="2.5" fill="#FAF4F0" />
+                                        </svg>
+                                      </div>
+
+                                      {/* Verdict Tag */}
+                                      <div className={`w-full mt-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-black font-sans shadow-2xs ${gaugeBgClass}`}>
+                                        {gaugeText}
                                       </div>
                                     </div>
 
-                                    <div className="text-[10px] text-[#A87C66] font-mono font-medium pt-0.5">
-                                      🔍 {gap.evidence}
+                                    {/* Right Column: Carousel for Gaps */}
+                                    <div className="bg-gradient-to-r from-white via-amber-50/10 to-[#F5EBE6]/40 border border-[#E4D5C7] rounded-xl p-4 flex flex-col justify-between shadow-2xs min-h-[220px]">
+                                      {/* Carousel Header with Navigation Arrows */}
+                                      <div className="flex items-center justify-between border-b border-[#E4D5C7]/60 pb-1.5 mb-2.5">
+                                        <div className="flex items-center gap-1.5">
+                                          <Sliders className="w-3.5 h-3.5 text-[#A87C66]" />
+                                          <span className="font-extrabold text-xs text-[#4A3E3D] font-sans">
+                                            時空三大落差分析
+                                          </span>
+                                        </div>
+                                        
+                                        {/* Navigation buttons */}
+                                        <div className="flex items-center gap-1">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setActiveGapIndex((prev) => (prev === 0 ? gapsArray.length - 1 : prev - 1));
+                                            }}
+                                            className="p-1 rounded-md bg-[#E4D5C7]/40 text-[#4A3E3D] hover:bg-[#E4D5C7] transition-all cursor-pointer"
+                                            title="上一項"
+                                          >
+                                            <ArrowLeft className="w-3 h-3" />
+                                          </button>
+                                          <span className="text-[9px] text-[#A87C66] font-mono font-bold whitespace-nowrap min-w-[24px] text-center">
+                                            {activeGapIndex % gapsArray.length + 1} / {gapsArray.length}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setActiveGapIndex((prev) => (prev + 1) % gapsArray.length);
+                                            }}
+                                            className="p-1 rounded-md bg-[#E4D5C7]/40 text-[#4A3E3D] hover:bg-[#E4D5C7] transition-all cursor-pointer"
+                                            title="下一項"
+                                          >
+                                            <ArrowRight className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* Carousel Active Gap Body */}
+                                      <div className="flex-1 flex flex-col justify-between space-y-2.5">
+                                        <div className="space-y-1.5">
+                                          <div className="flex flex-wrap items-center justify-between gap-1">
+                                            <span className="font-extrabold text-xs text-[#4A3E3D] font-sans">
+                                              {activeGap.title.replace('（意識構面 ↔ 行為構面）', '')}
+                                            </span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${activeGap.badgeStyle.bg} ${activeGap.badgeStyle.text} ${activeGap.badgeStyle.border}`}>
+                                              {activeGap.levelTag}
+                                            </span>
+                                          </div>
+
+                                          <p className="text-[11px] text-[#4A3E3D] font-serif leading-relaxed text-justify">
+                                            {activeGap.description}
+                                          </p>
+                                        </div>
+
+                                        {/* Advice/Action Recommendation */}
+                                        <div className="bg-amber-50/90 border border-amber-200 rounded-lg p-2 text-[11px] text-amber-950 font-serif leading-relaxed flex items-start gap-1.5">
+                                          <Sparkles className="w-3.5 h-3.5 text-amber-700 flex-shrink-0 mt-0.5 animate-pulse" />
+                                          <div>
+                                            <strong className="text-amber-900 font-sans block mb-0.5">具體行動推力：</strong>
+                                            {activeGap.actionPush}
+                                          </div>
+                                        </div>
+
+                                        {/* Evidence */}
+                                        <div className="text-[9px] text-[#A87C66] font-mono font-medium pt-1.5 border-t border-[#E4D5C7]/40 flex items-center gap-1">
+                                          <span className="font-sans font-bold">🔍 數據依據：</span>
+                                          <span>{activeGap.evidence}</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Carousel Dot Indicators */}
+                                      <div className="flex justify-center items-center gap-1.5 mt-2.5 pt-1.5 border-t border-[#E4D5C7]/30">
+                                        {gapsArray.map((_, idx) => (
+                                          <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => setActiveGapIndex(idx)}
+                                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                              activeGapIndex % gapsArray.length === idx 
+                                                ? 'bg-[#A87C66] w-3' 
+                                                : 'bg-[#E4D5C7] hover:bg-[#A87C66]/60'
+                                            }`}
+                                            title={`切換到第 ${idx + 1} 項`}
+                                          />
+                                        ))}
+                                      </div>
                                     </div>
                                   </div>
-                                ))}
-                              </div>
-                            </div>
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           {/* 5. SHOKO WHISPER ENTRY BANNER */}
@@ -2024,6 +2221,18 @@ export default function App() {
                         </div>
                       );
                     })()}
+
+                    {/* Return to Home Button */}
+                    <div className="flex justify-center pt-8 pb-4">
+                      <button
+                        type="button"
+                        onClick={handleReturnToHome}
+                        className="px-8 py-3.5 bg-gradient-to-r from-[#A87C66] to-[#8C5C42] hover:brightness-105 text-white rounded-xl font-extrabold text-sm sm:text-base transition-all shadow-md active:scale-98 flex items-center gap-2 cursor-pointer"
+                      >
+                        <Coffee className="w-5 h-5" />
+                        <span>再來一杯拿鐵吧</span>
+                      </button>
+                    </div>
 
                   </div>
                 )}
@@ -2201,6 +2410,18 @@ export default function App() {
                         />
                       );
                     })()}
+
+                    {/* Return to Home Button */}
+                    <div className="flex justify-center pt-6 pb-2">
+                      <button
+                        type="button"
+                        onClick={handleReturnToHome}
+                        className="px-8 py-3.5 bg-gradient-to-r from-[#A87C66] to-[#8C5C42] hover:brightness-105 text-white rounded-xl font-extrabold text-sm sm:text-base transition-all shadow-md active:scale-98 flex items-center gap-2 cursor-pointer"
+                      >
+                        <Coffee className="w-5 h-5" />
+                        <span>再來一杯拿鐵吧</span>
+                      </button>
+                    </div>
                   </motion.div>
                 )}
 
@@ -2483,58 +2704,70 @@ export default function App() {
             </div>
 
             {/* DYNAMIC SHOKO COMMENTARY BANNER IN MODAL */}
-            <div className="bg-gradient-to-r from-amber-950 via-[#4A3E3D] to-amber-900 text-white p-4 sm:p-5 border-b border-amber-500/30 flex items-start gap-4 flex-shrink-0 relative overflow-hidden">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-2 border-amber-300/80 overflow-hidden shadow-md flex-shrink-0 bg-amber-950">
-                <img
-                  src={shokoSmilingImg}
-                  alt="翔子"
-                  className="w-full h-full object-cover object-[center_15%] scale-135 origin-top"
-                />
-              </div>
-
-              <div className="space-y-1.5 text-xs sm:text-sm flex-1">
-                <div className="font-extrabold text-amber-200 font-serif flex items-center gap-2">
-                  <Coffee className="w-4 h-4 text-amber-300" />
-                  <span>
-                    {activeManualHoverSlot !== null
-                      ? `翔子解說 • 位置 ${activeManualHoverSlot + 1}【${GRID_POSITIONS[activeManualHoverSlot]?.name}】`
-                      : '翔子的牌面設定與調劑解說：'}
-                  </span>
+            {showShokoManualTips && (
+              <div className="bg-gradient-to-r from-amber-950 via-[#4A3E3D] to-amber-900 text-white p-4 sm:p-5 border-b border-amber-500/30 flex items-start gap-4 flex-shrink-0 relative overflow-hidden">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-2 border-amber-300/80 overflow-hidden shadow-md flex-shrink-0 bg-amber-950">
+                  <img
+                    src={shokoSmilingImg}
+                    alt="翔子"
+                    className="w-full h-full object-cover object-[center_15%] scale-135 origin-top"
+                  />
                 </div>
 
-                <AnimatePresence mode="wait">
-                  {activeManualHoverSlot !== null ? (
-                    <motion.p
-                      key={`slot-${activeManualHoverSlot}`}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      className="text-amber-100 font-serif leading-relaxed text-xs sm:text-sm bg-black/20 p-2.5 rounded-xl border border-amber-400/20"
-                    >
-                      {activeManualHoverSlot === 0 && "「位置 1【過去意識】：代表您過去在心智層面累積的思考習慣與信念起點。花色點數為問題的意識定錨。」"}
-                      {activeManualHoverSlot === 1 && "「位置 2【現在意識】：【中軸重點】您此刻的核心思考與理智焦點！與位置 8（現在行動）對照可計算『知行落差』喔！」"}
-                      {activeManualHoverSlot === 2 && "「位置 3【未來意識】：指向您潛意識對未來的期待、理想藍圖與願景遠景。」"}
-                      {activeManualHoverSlot === 3 && "「位置 4【隱蔽現實】：過往外部給予的條件限制、舊有資源或既有框架條件。」"}
-                      {activeManualHoverSlot === 4 && "「位置 5【核心現實】：【算牌結果】看位置 5 得知當前算牌結果，這是由位置 8『現在行動』所導致的現狀！」"}
-                      {activeManualHoverSlot === 5 && "「位置 6【未來現實】：【未來結果】最後導致的未來局勢結果，需要採取位置 9『未來行動』來達成。」"}
-                      {activeManualHoverSlot === 6 && "「位置 7【過去作為】：您過去習慣採取的行動路徑與舊有執行方式。」"}
-                      {activeManualHoverSlot === 7 && "「位置 8【現在行動】：【核心因果】您當前採取的具體行動！正是導致位置 5 當前算牌結果的根本原因。」"}
-                      {activeManualHoverSlot === 8 && "「位置 9【未來作為】：【未來行動】要達成位置 6 的未來結果，您所需要採取的未來關鍵行動。」"}
-                    </motion.p>
-                  ) : (
-                    <motion.p
-                      key="default-shoko-msg"
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      className="text-amber-100/90 font-serif leading-relaxed text-[11px] sm:text-xs"
-                    >
-                      「歡迎來到牌面設定吧台！如果您手邊有了實體牌陣、或想測試特定時空幾何（如全吉高勝算或高落差），可以在這裡自由指定 9 個位置的牌卡。將游標移到位置上，我會為您說明該位置的核心意義喔！」
-                    </motion.p>
-                  )}
-                </AnimatePresence>
+                <div className="space-y-1.5 text-xs sm:text-sm flex-1 pr-6">
+                  <div className="font-extrabold text-amber-200 font-serif flex items-center gap-2">
+                    <Coffee className="w-4 h-4 text-amber-300" />
+                    <span>
+                      {activeManualHoverSlot !== null
+                        ? `翔子解說 • 位置 ${activeManualHoverSlot + 1}【${GRID_POSITIONS[activeManualHoverSlot]?.name}】`
+                        : '翔子的牌面設定與調劑解說：'}
+                    </span>
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {activeManualHoverSlot !== null ? (
+                      <motion.p
+                        key={`slot-${activeManualHoverSlot}`}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="text-amber-100 font-serif leading-relaxed text-xs sm:text-sm bg-black/20 p-2.5 rounded-xl border border-amber-400/20"
+                      >
+                        {activeManualHoverSlot === 0 && "「位置 1【過去意識】：代表您過去在心智層面累積的思考習慣與信念起點。花色點數為問題的意識定錨。」"}
+                        {activeManualHoverSlot === 1 && "「位置 2【現在意識】：【中軸重點】您此刻的核心思考與理智焦點！與位置 8（現在行動）對照可計算『知行落差』喔！」"}
+                        {activeManualHoverSlot === 2 && "「位置 3【未來意識】：指向您潛意識對未來的期待、理想藍圖與願景遠景。」"}
+                        {activeManualHoverSlot === 3 && "「位置 4【隱蔽現實】：過往外部給予的條件限制、舊有資源或既有框架條件。」"}
+                        {activeManualHoverSlot === 4 && "「位置 5【核心現實】：【算牌結果】看位置 5 得知當前算牌結果，這是由位置 8『現在行動』所導致的現狀！」"}
+                        {activeManualHoverSlot === 5 && "「位置 6【未來現實】：【未來結果】最後導致的未來局勢結果，需要採取位置 9『未來行動』來達成。」"}
+                        {activeManualHoverSlot === 6 && "「位置 7【過去作為】：您過去習慣採取的行動路徑與舊有執行方式。」"}
+                        {activeManualHoverSlot === 7 && "「位置 8【現在行動】：【核心因果】您當前採取的具體行動！正是導致位置 5 當前算牌結果的根本原因。」"}
+                        {activeManualHoverSlot === 8 && "「位置 9【未來作為】：【未來行動】要達成位置 6 的未來結果，您所需要採取的未來關鍵行動。」"}
+                      </motion.p>
+                    ) : (
+                      <motion.p
+                        key="default-shoko-msg"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="text-amber-100/90 font-serif leading-relaxed text-[11px] sm:text-xs"
+                      >
+                        「歡迎來到牌面設定吧台！如果您手邊有了實體牌陣、或想測試特定時空幾何（如全吉高勝算或高落差），可以在這裡自由指定 9 個位置的牌卡。將游標移到位置上，我會為您說明該位置的核心意義喔！」
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Close Button to hide Shoko tips */}
+                <button
+                  type="button"
+                  onClick={() => setShowShokoManualTips(false)}
+                  className="absolute top-2.5 right-2.5 p-1 text-amber-200/75 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer"
+                  title="隱藏翔子解說提示"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            </div>
+            )}
 
             {/* Quick Action Toolbar & Presets */}
             <div className="bg-[#E4D5C7]/60 px-6 py-3 border-b border-[#D2BCA6] flex flex-wrap gap-2 justify-between items-center text-xs flex-shrink-0">
@@ -2575,6 +2808,17 @@ export default function App() {
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>清空</span>
                 </button>
+
+                {!showShokoManualTips && (
+                  <button
+                    type="button"
+                    onClick={() => setShowShokoManualTips(true)}
+                    className="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 border border-amber-300 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer font-bold animate-pulse"
+                  >
+                    <Coffee className="w-3.5 h-3.5 text-amber-800" />
+                    <span>顯示翔子提示</span>
+                  </button>
+                )}
               </div>
 
               <div className="text-xs text-[#8C5C42] font-mono font-bold bg-white/80 px-2.5 py-1 rounded-lg border border-[#D2BCA6]">
@@ -2870,9 +3114,9 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Omikuji Fortune Slip (時空轉運大吉紙籤) */}
+                    {/* Omikuji Fortune Slip (時空轉運紙籤) */}
                     <div className="bg-gradient-to-br from-amber-50/95 to-amber-100/70 border-2 border-red-700/60 rounded-2xl p-5 sm:p-6 shadow-md relative overflow-hidden text-left max-w-lg mx-auto space-y-3.5">
-                      {/* Header with Large Red "大吉" Stamp */}
+                      {/* Header with Large Red Fortune Stamp */}
                       <div className="flex justify-between items-start border-b border-red-200/80 pb-3 gap-2">
                         <div>
                           <div className="flex items-center gap-2">
@@ -2890,7 +3134,7 @@ export default function App() {
 
                         {/* Red Stamp */}
                         <div className="border-4 border-red-700 text-red-700 rounded-xl px-3 py-1 text-center font-serif font-black tracking-widest shadow-xs bg-red-50/90 transform rotate-[-3deg] flex-shrink-0">
-                          <span className="text-xl sm:text-2xl block leading-none">大吉</span>
+                          <span className="text-xl sm:text-2xl block leading-none">{unlockedLuckBlessing.fortune || '大吉'}</span>
                           <span className="text-[9px] block font-bold mt-0.5">時空轉運</span>
                         </div>
                       </div>
@@ -2915,6 +3159,23 @@ export default function App() {
                             加持時間：{unlockedLuckBlessing.unlockedAt}
                           </span>
                         </div>
+
+                        {/* Dynamic cheering words based on energyBoost */}
+                        <div className="mt-2.5 bg-emerald-50 border border-emerald-200/60 rounded-xl p-3 text-xs text-emerald-950 font-serif leading-relaxed flex items-center gap-2">
+                          <span className="text-lg">📢</span>
+                          <div>
+                            <span className="font-extrabold text-emerald-900 block font-sans">
+                              時空打氣話語：
+                            </span>
+                            {unlockedLuckBlessing.energyBoost <= 15 ? (
+                              <span>「細水長流，穩健前行，星光終會照亮夜空！🌟」</span>
+                            ) : unlockedLuckBlessing.energyBoost <= 25 ? (
+                              <span>「元氣滿滿，信心加倍，突破現狀就在此時！🔥」</span>
+                            ) : (
+                              <span>「能量爆棚，勢不可擋，你就是掌控命運的主宰！🚀」</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -2925,17 +3186,13 @@ export default function App() {
                         onClick={() => setShowLuckModal(false)}
                         className="w-full max-w-lg py-4 bg-gradient-to-r from-amber-700 via-amber-800 to-[#4A3E3D] text-white rounded-2xl text-sm sm:text-base font-extrabold hover:brightness-110 active:scale-98 transition-all shadow-lg mx-auto flex items-center justify-center gap-2 cursor-pointer"
                       >
-                        <span>收下翔子端的餐點與「大吉」紙籤 ❤️</span>
+                        <span>收下翔子端的餐點與「{unlockedLuckBlessing.fortune || '大吉'}」紙籤 ❤️</span>
                       </button>
                     </div>
                   </div>
                 ) : (
                   /* PACKAGE OPTIONS SELECTION VIEW (全面優化UI: 可複選與取消) */
                   <div className="space-y-5">
-                    <div className="text-xs font-bold text-[#A87C66] bg-amber-100/60 px-3 py-1.5 rounded-lg border border-amber-200/80 inline-block">
-                      💡 提示：可同時點擊複選多個套餐儀式，再次點擊可取消選擇。
-                    </div>
-
                     <div className="grid grid-cols-1 gap-4">
                       
                       {/* Option 1: $100 NTD */}
@@ -2948,12 +3205,6 @@ export default function App() {
                         }`}
                       >
                         <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl shrink-0 mt-0.5 ${
-                            selectedLuckPrices.includes(100) ? 'bg-[#A87C66] text-white' : 'bg-[#E4D5C7]/60 text-[#4A3E3D]'
-                          }`}>
-                            ☕
-                          </div>
-
                           <div className="space-y-1.5 flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h4 className="text-base sm:text-lg font-extrabold text-[#4A3E3D] font-serif leading-snug">
@@ -2973,7 +3224,7 @@ export default function App() {
                                 ⚡ 能量指數 +15%
                               </span>
                               <span className="bg-amber-100/70 text-amber-900 px-2.5 py-0.5 rounded-lg border border-amber-300/60">
-                                📜 經典【大吉】紙籤
+                                📜 經典【小吉】紙籤
                               </span>
                             </div>
                           </div>
@@ -3010,12 +3261,6 @@ export default function App() {
                         }`}
                       >
                         <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl shrink-0 mt-0.5 ${
-                            selectedLuckPrices.includes(200) ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white' : 'bg-amber-100 text-amber-900'
-                          }`}>
-                            🍯
-                          </div>
-
                           <div className="space-y-1.5 flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h4 className="text-base sm:text-lg font-extrabold text-[#4A3E3D] font-serif leading-snug">
@@ -3035,7 +3280,7 @@ export default function App() {
                                 ⚡ 能量指數 +25% 顯著躍升
                               </span>
                               <span className="bg-amber-200/80 text-amber-950 px-2.5 py-0.5 rounded-lg border border-amber-300">
-                                📜 貴人相助【大吉】紙籤
+                                📜 貴人相助【中吉】紙籤
                               </span>
                             </div>
                           </div>
@@ -3072,12 +3317,6 @@ export default function App() {
                         }`}
                       >
                         <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl shrink-0 mt-0.5 ${
-                            selectedLuckPrices.includes(500) ? 'bg-gradient-to-r from-amber-800 to-red-800 text-white' : 'bg-amber-200 text-amber-950'
-                          }`}>
-                            🍷
-                          </div>
-
                           <div className="space-y-1.5 flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h4 className="text-base sm:text-lg font-extrabold text-[#4A3E3D] font-serif leading-snug">
@@ -3177,11 +3416,11 @@ export default function App() {
               </div>
 
               <div>
-                <h3 className="text-xl font-extrabold text-[#4A3E3D] font-serif mb-1.5">
-                  🔔 訂單已經送出！
+                <h3 className="text-xl font-extrabold text-[#4A3E3D] font-serif mb-1.5 leading-snug px-2">
+                  {userQuestion.trim() === '' ? "你只是想要找我說話吧～真是拿你沒辦法～" : "🔔 訂單已經送出！"}
                 </h3>
                 <p className="text-xs text-[#7A6A63] font-serif leading-relaxed">
-                  翔子已經聽到您的心聲，請選擇拿鐵調製的方式：
+                  {userQuestion.trim() === '' ? "請選擇拿鐵調製的方式：" : "翔子已經聽到您的心聲，請選擇拿鐵調製的方式："}
                 </p>
               </div>
 
@@ -3215,23 +3454,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* FLOATING ACTION BUTTON: SHARE FORTUNE (畫面右側浮動按鈕) */}
-      <AnimatePresence>
-        {isGridActive && matrixCards.length === 9 && !showShareModal && (
-          <motion.button
-            initial={{ opacity: 0, x: 50, scale: 0.9 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 50, scale: 0.9 }}
-            type="button"
-            onClick={() => setShowShareModal(true)}
-            className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 px-3.5 py-3 sm:px-4 sm:py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl border-2 border-amber-200/90 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer group backdrop-blur-xs"
-            title="點擊分享我的時空運勢圖卡"
-          >
-            <Share2 className="w-4 h-4 text-amber-100 group-hover:rotate-12 transition-transform" />
-            <span className="font-serif tracking-wide shadow-2xs">✨ 分享我的運勢</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
+
 
       {/* FORTUNE SHARE PREVIEW & COPY MODAL */}
       <AnimatePresence>
