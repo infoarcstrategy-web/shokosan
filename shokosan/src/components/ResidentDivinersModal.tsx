@@ -20,8 +20,8 @@ import { CharacterAvatar } from './CharacterAvatars';
 import shokoSmilingImg from '../assets/images/shoko_smiling_nobubble_1785155207476.jpg';
 import shokoNavyImg from '../assets/images/shoko_navy_hair_1785147098274.jpg';
 import animeFemaleBaristaImg from '../assets/images/anime_female_barista_1785145313897.jpg';
-import shokoBraidImg from '../assets/images/shoko_smiling_braid_1785154858998.jpg';
-import femaleBaristaImg from '../assets/images/female_barista_1785145187076.jpg';
+import sakutaImg from '../assets/images/Azusagawa Sakuta.jpg';
+import neneImg from '../assets/images/Iwamizawa Nene.jpg';
 
 export interface Diviner {
   id: string;
@@ -92,7 +92,7 @@ const DIVINERS_LIST: Diviner[] = [
     id: 'sakuta',
     name: '梓川咲太 (Sakuta Azusagawa)',
     title: '思春期現象觀察員 ‧ 駐館理性直覺剖析師',
-    avatar: femaleBaristaImg,
+    avatar: sakutaImg,
     rating: 4.97,
     reviewCount: 390,
     yearsOfExp: 7,
@@ -107,7 +107,7 @@ const DIVINERS_LIST: Diviner[] = [
     id: 'nene',
     name: '岩見澤寧寧 (Nene Iwamizawa)',
     title: '靈魂共振引導師 ‧ 精靈魔法與情緒氣場調和',
-    avatar: shokoBraidImg,
+    avatar: neneImg,
     rating: 4.95,
     reviewCount: 280,
     yearsOfExp: 6,
